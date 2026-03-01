@@ -264,9 +264,6 @@ function BespokeDialog({ onPrefill }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="bg-sky-600 text-white hover:bg-sky-500">
-          Start a bespoke request <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
       </DialogTrigger>
       <DialogContent className="border-black/10 bg-white text-zinc-900">
         <DialogHeader>
@@ -455,15 +452,6 @@ export default function ValmontierSite() {
                     <Button asChild className="bg-sky-600 text-white hover:bg-sky-500">
                       <Link to={`/products/${signature?.slug}`}>View Aviator details</Link>
                     </Button>
-
-                    <Separator className="bg-white/10" />
-
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="text-sm text-zinc-600">
-                        Want something different? Start bespoke and pick your parts.
-                      </div>
-                      <BespokeDialog onPrefill={onPrefill} />
-                    </div>
                   </div>
                 </div>
 

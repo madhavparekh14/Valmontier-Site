@@ -42,7 +42,7 @@ const optionCatalog = {
   aviator: {
     dialColors: ["White Roman", "Ivory", "Silver", "Sky Blue"],
     handColors: ["Blue", "Polished Steel", "Black"],
-    strapOptions: ["Steel Bracelet", "Leather Strap"],
+    strapOptions: ["Steel Bracelet", "Black Leather", "Navy Leather", "Brown Leather", "Tan Leather"],
     hasQuickRelease: true,
   },
   "grand-valmontier": {
@@ -169,6 +169,11 @@ export default function ProductPage() {
                             {c}
                           </SelectItem>
                         ))}
+
+                        <SelectItem value="Blue (Lume)">Blue (Lume)</SelectItem>
+                        <SelectItem value="Black (Lume)">Black (Lume)</SelectItem>
+                        <SelectItem value="Steel (Lume)">Steel (Lume)</SelectItem>
+                        <SelectItem value="Gold (Lume)">Gold (Lume)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

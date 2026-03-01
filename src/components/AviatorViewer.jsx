@@ -1,185 +1,325 @@
-import React, { Suspense, useEffect, useMemo } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
-function tuneMaterialForColor(mat) {
-  if (!mat) return mat;
-  const m = mat.clone();
-
-  // Ensure color is not ignored
-  if (m.color) m.color.set("#ffffff");
-
-  // PBR tuning so color shows (esp. if it looks gray/unstyled)
-  if (typeof m.metalness === "number") m.metalness = Math.min(m.metalness, 0.25);
-  if (typeof m.roughness === "number") m.roughness = Math.max(m.roughness, 0.35);
-
-  // If the GLB uses textures that overpower color, keep them but still allow tint.
-  // (If you want pure flat colors, uncomment these 2 lines.)
-  // m.map = null;
-  // m.emissiveMap = null;
-
-  m.needsUpdate = true;
-  return m;
-}
-
 function AviatorModel({ options }) {
   const { scene } = useGLTF("/valmontieraviator.glb");
+
+  const STRAP_COLORS = useMemo(
+    () => ({
+      "Black Leather": "#111111",
+      "Navy Leather": "#0a1e3f",
+      "Brown Leather": "#5a3a22",
+      "Tan Leather": "#8a5a3a",
+      "Leather Strap": "#111111",
+    }),
+    []
+  );
 
   const DIAL = useMemo(
     () => ({
       "White Roman": "#f6f6f6",
-      Ivory: "#efe7d6",
-      "Sky Blue": "#86c8ff",
-      Black: "#121417",
-      Silver: "#d8d8d8",
+      Ivory: "#efe6d2",
+      Silver: "#d9dde2",
+      "Sky Blue": "#8fb8d8",
+      Black: "#121316",
+      Blue: "#173a63",
     }),
     []
   );
 
   const HANDS = useMemo(
     () => ({
-      Blue: "#1e4cff",
-      Black: "#1c1c1c",
-      "Polished Steel": "#cfd3d6",
-      Gold: "#c9a24a",
+      Blue: { base: "#1e4cff", lume: "#1e4cff" },
+      Black: { base: "#151515", lume: "#151515" },
+      Steel: { base: "#cfd6dd", lume: "#cfd6dd" },
+      Gold: { base: "#caa24a", lume: "#caa24a" },
+
+      "Blue (Lume)": { base: "#1e4cff", lume: "#e7f6ff" },
+      "Black (Lume)": { base: "#151515", lume: "#e9f0e6" },
+      "Steel (Lume)": { base: "#cfd6dd", lume: "#e9f0e6" },
+      "Gold (Lume)": { base: "#caa24a", lume: "#fff2c6" },
     }),
     []
   );
 
-  const STRAP = useMemo(
-    () => ({
-      "Steel Bracelet": "#cfd3d6",
-      "Black Leather": "#111111",
-      "Navy Leather": "#0a1e3f",
-      "Brown Leather": "#5a3a22",
-    }),
-    []
-  );
+  const INK = useMemo(() => ({ Dark: "#141518", Navy: "#0e1a2a" }), []);
+
+  const dialInkFor = (dialColor) => {
+    if (dialColor === "White Roman" || dialColor === "Ivory" || dialColor === "Silver") return INK.Dark;
+    if (dialColor === "Black") return "#f2f2f2";
+    if (dialColor === "Blue") return "#e9eef6";
+    if (dialColor === "Sky Blue") return INK.Navy;
+    return INK.Dark;
+  };
+
+  const ensureStd = (mat) => {
+    if (!mat) return null;
+    if (Array.isArray(mat)) return mat.map(ensureStd);
+    return mat.clone ? mat.clone() : mat;
+  };
+
+  const setMat = (mat, props) => {
+    if (!mat) return;
+    if (Array.isArray(mat)) {
+      mat.forEach((m) => setMat(m, props));
+      return;
+    }
+
+    if (props.color && mat.color) mat.color.set(props.color);
+    if (typeof props.metalness === "number" && typeof mat.metalness === "number") mat.metalness = props.metalness;
+    if (typeof props.roughness === "number" && typeof mat.roughness === "number") mat.roughness = props.roughness;
+
+    if (typeof props.transparent === "boolean") mat.transparent = props.transparent;
+    if (typeof props.opacity === "number") mat.opacity = props.opacity;
+
+    if (typeof props.clearcoat === "number" && "clearcoat" in mat) mat.clearcoat = props.clearcoat;
+    if (typeof props.clearcoatRoughness === "number" && "clearcoatRoughness" in mat)
+      mat.clearcoatRoughness = props.clearcoatRoughness;
+
+    if (props.emissive && mat.emissive) mat.emissive.set(props.emissive);
+    if (typeof props.emissiveIntensity === "number" && "emissiveIntensity" in mat)
+      mat.emissiveIntensity = props.emissiveIntensity;
+
+    if (typeof props.envMapIntensity === "number" && "envMapIntensity" in mat)
+      mat.envMapIntensity = props.envMapIntensity;
+
+    mat.needsUpdate = true;
+  };
+
+  const stripColorMaps = (mat) => {
+    if (!mat) return;
+
+    const apply = (m) => {
+      if (!m) return;
+      if ("map" in m) m.map = null;
+      if ("aoMap" in m) m.aoMap = null;
+      if ("metalnessMap" in m) m.metalnessMap = null;
+      if ("roughnessMap" in m) m.roughnessMap = null;
+      if ("emissiveMap" in m) m.emissiveMap = null;
+      if ("vertexColors" in m) m.vertexColors = false;
+      m.needsUpdate = true;
+    };
+
+    if (Array.isArray(mat)) mat.forEach(apply);
+    else apply(mat);
+  };
 
   useEffect(() => {
-  scene.traverse((obj) => {
-    if (!obj.isMesh) return;
+    const STEEL = "#c9d0d6";
+    const isBracelet = options.strap === "Steel Bracelet";
+    const isLeather = !isBracelet;
 
-    // Always clone materials so updates apply reliably
-    obj.material = tuneMaterialForColor(obj.material);
+    // Bracelet meshes to hide when leather is selected
+    const BRACELET_MESHES = new Set([
+      "clasp_part2",
+      "clasppart",
+      "metalpin",
+      "metalpin2",
+      "metalpin3",
+      "metalpins",
+      "quickrelease",
+      "straplinks",
+      "claspbuttons",
+      "bracelet",
+      "braceletscrews",
+      "butterflyclasp",
+      "butterflyclasprelease",
+      "backcover",
+    ]);
 
-    // ===== FRONT GLASS (clear) =====
-    if (obj.name === "Cartier_SantosDumont38_case_frontGlass") {
-      // Ensure it's a physical material so transmission works
-      const base = obj.material;
-      const glass =
-        base && base.isMeshPhysicalMaterial
-          ? base
-          : new THREE.MeshPhysicalMaterial();
+    // Leather meshes to hide when bracelet is selected
+    const LEATHER_MESHES = new Set(["leatherstrap"]);
+    const LEATHER_HW_MESHES = new Set(["leatherstrap_hardware"]);
 
-      glass.color?.set("#ffffff");
-      glass.metalness = 0;
-      glass.roughness = 0;
-      glass.transmission = 1; // clear
-      glass.transparent = true;
-      glass.opacity = 1;
-      glass.thickness = 0.35;
-      glass.ior = 1.5;
-      glass.clearcoat = 1;
-      glass.clearcoatRoughness = 0;
+    // Stainless steel parts (case + bracelet + hardware)
+    const STEEL_MESHES = new Set([
+      "case",
+      "watchcasepart",
+      "bezel",
+      "bezel_screws",
+      "backcover",
+      "backcoverscrews",
+      "crownwheel",
+      "bracelet",
+      "braceletscrews",
+      "butterflyclasp",
+      "butterflyclasprelease",
+      "clasp_part2",
+      "clasppart",
+      "metalpin",
+      "metalpin2",
+      "metalpin3",
+      "metalpins",
+      "quickrelease",
+      "straplinks",
+      "claspbuttons",
+      "leatherstrap_hardware",
+    ]);
 
-      obj.material = glass;
-      obj.material.needsUpdate = true;
-    }
+    const DIAL_BASE_MESHES = new Set(["dial", "dialmiddle"]);
+    const NUMERAL_MESHES = new Set(["SBD0001", "SBD0002", "SBD0003", "SBD0"]);
 
-    // ===== STAINLESS STEEL CASE =====
-    if (
-      obj.name === "Cartier_SantosDumont38_case_body" ||
-      obj.name === "Cartier_SantosDumont38_case_chrome" ||
-      obj.name === "Cartier_SantosDumont38_case_bezel" ||
-      obj.name === "Cartier_SantosDumont38_case_bolts" ||
-      obj.name === "Cartier_SantosDumont38_case_frontRim" ||
-      obj.name === "Cartier_SantosDumont38_case_adjuster" ||
-      obj.name === "Cartier_SantosDumont38_case_back_bolts" ||
-      obj.name === "Cartier_SantosDumont38_case_back_type00"
-    ) {
-      if (obj.material?.color) obj.material.color.set("#cfd3d6"); // stainless tone
-      if (typeof obj.material.metalness === "number") obj.material.metalness = 0.9;
-      if (typeof obj.material.roughness === "number") obj.material.roughness = 0.25;
-      obj.material.needsUpdate = true;
-      // do not return; let other rules apply if needed
-    }
-    if (obj.name === "Cartier_SantosDumont38_case_dial") {
-      if (obj.material?.map) obj.material.map = null; // important if texture overrides color
-      if (obj.material?.color) obj.material.color.set(DIAL[options.dialColor] || "#f6f6f6");
-      if (typeof obj.material.metalness === "number") obj.material.metalness = 0.05;
-      if (typeof obj.material.roughness === "number") obj.material.roughness = 0.55;
-      obj.material.needsUpdate = true;
-    }
+    scene.traverse((obj) => {
+      if (!obj?.isMesh) return;
 
-    // Roman numeral decal / dial print (make sure it stays visible)
-    if (obj.name === "Cartier_SantosDumont38_case_dialDecal") {
-    // keep it visible
-    obj.visible = true;
-    // decals often come in with weird transparency/alpha settings
-    if (obj.material) {
-        obj.material.transparent = true;
-        obj.material.opacity = 1;
-        obj.material.depthWrite = true;
-        obj.material.depthTest = true;
+      // clone first so changes stick
+      obj.material = ensureStd(obj.material);
 
-        // prevent it from being fully black due to lighting
-        if ("emissive" in obj.material) {
-        obj.material.emissive?.set("#111111");
-        obj.material.emissiveIntensity = 0.35;
+      // show/hide strap vs bracelet
+      if (BRACELET_MESHES.has(obj.name)) obj.visible = isBracelet;
+      if (LEATHER_MESHES.has(obj.name)) obj.visible = isLeather;
+      if (LEATHER_HW_MESHES.has(obj.name)) obj.visible = isLeather;
+
+      // leather strap tint
+      if (obj.name === "leatherstrap") {
+        const col = STRAP_COLORS[options.strap] || "#111111";
+        stripColorMaps(obj.material);
+        setMat(obj.material, {
+          color: col,
+          metalness: 0.0,
+          roughness: 0.9,
+          transparent: false,
+          opacity: 1,
+          envMapIntensity: 0.6,
+        });
+        return;
+      }
+
+      // leather hardware matches steel/case
+      if (obj.name === "leatherstrap_hardware") {
+        stripColorMaps(obj.material);
+        setMat(obj.material, {
+          color: STEEL,
+          metalness: 0.92,
+          roughness: 0.22,
+          envMapIntensity: 1.4,
+        });
+        return;
+      }
+
+      // clear front glass
+      if (obj.name === "frontglass") {
+        setMat(obj.material, {
+          color: "#ffffff",
+          metalness: 0.0,
+          roughness: 0.03,
+          transparent: true,
+          opacity: 0.12,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.02,
+          envMapIntensity: 1.2,
+        });
+        return;
+      }
+
+      // crown crystal
+      if (obj.name === "dobj") {
+        setMat(obj.material, {
+          color: "#002e99",
+          metalness: 0.0,
+          roughness: 0.08,
+          transparent: true,
+          opacity: 0.7,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.02,
+          envMapIntensity: 1.2,
+        });
+        return;
+      }
+
+      // steel everywhere for case and bracelet so bracelet matches case (no gunmetal)
+      if (STEEL_MESHES.has(obj.name)) {
+        setMat(obj.material, {
+          color: STEEL,
+          metalness: 0.92,
+          roughness: 0.22,
+          envMapIntensity: 1.4,
+        });
+
+        // quickrelease only exists visually on bracelet mode
+        if (obj.name === "quickrelease") obj.visible = !!options.quickRelease && isBracelet;
+        return;
+      }
+
+      // dial base
+      if (DIAL_BASE_MESHES.has(obj.name)) {
+        setMat(obj.material, {
+          color: DIAL[options.dialColor] || "#f6f6f6",
+          metalness: 0.05,
+          roughness: 0.55,
+          envMapIntensity: 1.0,
+        });
+        return;
+      }
+
+      // numerals
+      if (NUMERAL_MESHES.has(obj.name)) {
+        setMat(obj.material, {
+          color: dialInkFor(options.dialColor),
+          metalness: 0.0,
+          roughness: 0.85,
+          transparent: false,
+          opacity: 1,
+          envMapIntensity: 0.2,
+        });
+        return;
+      }
+
+      // hands
+      if (obj.name === "hourhand" || obj.name === "minutehand" || obj.name === "secondshand") {
+        const spec = HANDS[options.handColor] || HANDS.Steel;
+        setMat(obj.material, {
+          color: spec.base,
+          metalness: 0.98,
+          roughness: 0.18,
+          emissive: "#000000",
+          emissiveIntensity: 0,
+          envMapIntensity: 1.6,
+        });
+        return;
+      }
+
+      // lume meshes: only visible for "(Lume)" options (your default ones have lume matching base already)
+      if (obj.name === "hourhandlume" || obj.name === "minutehandlume") {
+        const spec = HANDS[options.handColor] || HANDS.Steel;
+
+        // show always so default looks like one solid hand
+        // if you want ONLY lume options to show, change to: const show = options.handColor.includes("(Lume)");
+        const show = true;
+
+        obj.visible = show;
+
+        if (show) {
+          setMat(obj.material, {
+            color: spec.lume,
+            metalness: 0.98,
+            roughness: 0.18,
+            emissive: "#000000",
+            emissiveIntensity: 0,
+            transparent: false,
+            opacity: 1,
+            envMapIntensity: 1.6,
+          });
         }
-
-        // keep decal non-metallic so it reads like print
-        if (typeof obj.material.metalness === "number") obj.material.metalness = 0.0;
-        if (typeof obj.material.roughness === "number") obj.material.roughness = 0.7;
-
-        obj.material.needsUpdate = true;
-    }
-    }
-
-    // Hands color (hour + minute)
-    if (
-      obj.name === "Cartier_SantosDumont38_hand_hour" ||
-      obj.name === "Cartier_SantosDumont38_hand_minute"
-    ) {
-      if (obj.material?.color) obj.material.color.set(HANDS[options.handColor] || "#1e4cff");
-      // Hands often look best a bit metallic
-      if (typeof obj.material.metalness === "number") obj.material.metalness = 0.5;
-      if (typeof obj.material.roughness === "number") obj.material.roughness = 0.25;
-      obj.material.needsUpdate = true;
-    }
-
-    // Strap vs bracelet visibility
-    if (obj.name === "Santos_Dumont_Small_Leather") {
-      const isLeather = options.strap !== "Steel Bracelet";
-      obj.visible = isLeather;
-
-      // Tint leather strap
-      if (isLeather && obj.material?.color) {
-        obj.material.color.set(STRAP[options.strap] || "#111111");
-        if (typeof obj.material.metalness === "number") obj.material.metalness = 0.0;
-        if (typeof obj.material.roughness === "number") obj.material.roughness = 0.85;
-        obj.material.needsUpdate = true;
+        return;
       }
-    }
+    });
+  }, [
+    scene,
+    options.dialColor,
+    options.handColor,
+    options.strap,
+    options.quickRelease,
+    DIAL,
+    HANDS,
+    INK,
+    STRAP_COLORS,
+  ]);
 
-    if (obj.name === "Santos_Dumont_Small_Metal") {
-      const isMetal = options.strap === "Steel Bracelet";
-      obj.visible = isMetal;
-
-      // Slight tint for bracelet (optional)
-      if (isMetal && obj.material?.color) {
-        obj.material.color.set(STRAP["Steel Bracelet"]);
-        if (typeof obj.material.metalness === "number") obj.material.metalness = 0.85;
-        if (typeof obj.material.roughness === "number") obj.material.roughness = 0.25;
-        obj.material.needsUpdate = true;
-      }
-    }
-  });
-}, [scene, options.dialColor, options.handColor, options.strap, DIAL, HANDS, STRAP]);
-
-  return <primitive object={scene} />;
+  // rotate to face front if your GLB is sideways
+  return <primitive object={scene} rotation={[0, -Math.PI / 2, 0]} />;
 }
 
 export default function AviatorViewer({ options }) {
@@ -188,19 +328,70 @@ export default function AviatorViewer({ options }) {
       dialColor: "White Roman",
       handColor: "Blue",
       strap: "Steel Bracelet",
+      quickRelease: false,
     };
 
+  const [showHint, setShowHint] = useState(true);
+
   return (
-    <div className="h-[420px] w-full overflow-hidden rounded-3xl border border-black/10 bg-white">
-      <Canvas camera={{ position: [0, 0.6, 2.2], fov: 40 }}>
-        <ambientLight intensity={0.9} />
+    <div
+      className="relative h-[420px] w-full overflow-hidden rounded-3xl border border-black/10 bg-white"
+      onPointerDown={() => setShowHint(false)}
+      onTouchStart={() => setShowHint(false)}
+    >
+      <Canvas camera={{ position: [0, 0.02, 0.2], fov: 35, near: 0.01, far: 50 }}>
+        <ambientLight intensity={0.85} />
         <directionalLight position={[3, 3, 3]} intensity={1.3} />
         <Environment preset="city" />
         <Suspense fallback={null}>
           <AviatorModel options={safe} />
         </Suspense>
-        <OrbitControls enablePan={false} />
+
+        <OrbitControls
+          makeDefault
+          enablePan
+          target={[0, 0.02, 0]}
+          enableDamping
+          dampingFactor={0.08}
+          rotateSpeed={0.9}
+          zoomSpeed={1.0}
+          panSpeed={0.8}
+          minDistance={0.03}
+          maxDistance={2.5}
+          minPolarAngle={0.2}
+          maxPolarAngle={Math.PI - 0.2}
+        />
       </Canvas>
+
+      {showHint ? (
+        <div className="pointer-events-none absolute inset-0 flex items-end justify-center p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white/80 px-4 py-3 backdrop-blur">
+            <div className="text-sm font-medium text-zinc-900">Controls</div>
+
+            <div className="mt-2 grid grid-cols-1 gap-1 text-xs text-zinc-700">
+              <div className="flex items-center justify-between">
+                <span>Rotate</span>
+                <span className="font-medium">Drag</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Zoom</span>
+                <span className="font-medium">Scroll / Pinch</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Pan</span>
+                <span className="font-medium">Right drag / Two-finger drag</span>
+              </div>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-zinc-900 animate-pulse" />
+              <div className="text-[11px] text-zinc-600">Click the viewer to dismiss</div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
+
+useGLTF.preload("/valmontieraviator.glb");
