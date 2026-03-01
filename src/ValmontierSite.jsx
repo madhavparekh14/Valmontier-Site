@@ -64,16 +64,16 @@ const mockWatches = [
     slug: "aviator",
     name: "Valmontier Aviator",
     price: "$399.99",
-    tags: ["Made to order", "Everyday"],
+    tags: ["Everyday Wear"],
     desc: "Matte black case with warm gilt accents and a clean, legible dial.",
-    paymentLink: "https://buy.stripe.com/test_9B6bJ1fMg4sR77M16O3wQ00",
+    paymentLink: "https://buy.stripe.com/3cIcN5dE87F3ajY3eW3wQ01",
     image: "/valmontieraviator.png"
   },
   {
     slug: "grand-valmontier",
     name: "Grand Valmontier",
     price: "$480",
-    tags: ["Made to order", "Casual"],
+    tags: ["Casual"],
     desc: "Deep charcoal sunburst dial, slim hands, and polished casework.",
     paymentLink: "https://buy.stripe.com/test_3cIcN5dE87F3ajY3eW3wQ01",
     image: "/grandvalmontier.png"
@@ -82,7 +82,7 @@ const mockWatches = [
     slug: "chronaut",
     name: "Valmontier Chronaut",
     price: "$299.99",
-    tags: ["Made to order", "Chronograph"],
+    tags: ["Chronograph"],
     desc: "Brushed steel feel with a dark dial and crisp lume for daily wear.",
     paymentLink: "https://buy.stripe.com/test_fZubJ19nS4sR9fU6r83wQ02",
     image: "/valmontierchronaut.png"
