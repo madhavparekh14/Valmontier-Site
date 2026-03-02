@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import AviatorViewer from "@/components/AviatorViewer";
+import BespokeForm from "@/components/BespokeForm";
 
 const products = [
   {
@@ -242,6 +243,18 @@ export default function ProductPage() {
                     Reset
                   </Button>
                 </div>
+                <Separator className="bg-black/10" />
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-zinc-900">
+                      Bespoke request
+                    </div>
+
+                    <div className="text-xs text-zinc-600">
+                      Ask for custom engraving, dial variants, or special straps.
+                    </div>
+
+                    <BespokeForm options={options} modelName={product.name} />
+                  </div>
               </CardContent>
             </Card>
           </div>

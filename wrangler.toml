@@ -1,0 +1,9 @@
+name = "valmontierwatches"
+compatibility_date = "2026-03-01"
+
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "valmontier-db"
+database_id = "a99795a2-93e3-428a-b1b7-6aabf68d4b09"
