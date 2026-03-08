@@ -7,7 +7,3 @@ binding = "DB"
 database_name = "valmontier-db"
 database_id = "a99795a2-93e3-428a-b1b7-6aabf68d4b09"
 
-[[send_email]]
-name = "NOTIFY_EMAIL"
-destination_address = "madhavashishparekh@gmail.com"
-allowed_sender_addresses = ["bespoke@valmontierwatches.com"]
