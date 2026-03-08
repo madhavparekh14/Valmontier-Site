@@ -2,12 +2,14 @@ type D1Database = {
   prepare: (query: string) => {
     bind: (...values: any[]) => {
       run: () => Promise<{ meta?: { last_row_id?: number } }>;
+      all: () => Promise<{ results: any[] }>;
     };
   };
 };
 
 type Env = {
   DB: D1Database;
+  ADMIN_TOKEN: string;
 };
 
 type PagesFunction<E = unknown> = (context: {
@@ -17,6 +19,44 @@ type PagesFunction<E = unknown> = (context: {
   waitUntil: (promise: Promise<any>) => void;
   next: () => Promise<Response>;
 }) => Promise<Response> | Response;
+
+export const onRequestGet: PagesFunction<Env> = async (context) => {
+  try {
+    const url = new URL(context.request.url);
+    const token = url.searchParams.get("token");
+
+    if (!token || token !== context.env.ADMIN_TOKEN) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    const result = await context.env.DB.prepare(
+      `SELECT *
+       FROM bespoke_requests
+       ORDER BY created_at DESC`
+    )
+      .bind()
+      .all();
+
+    return new Response(JSON.stringify(result.results || []), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({
+        error: "Server error",
+        detail: String(err?.message || err),
+      }),
+      {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+};
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
