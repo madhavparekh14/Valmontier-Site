@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Shield, Package, ScrollText, Mail, Sparkles } from "lucide-react";
 
 const mockOrders = [
   {
@@ -69,6 +71,9 @@ function StatusPill({ status }) {
     Cancelled: "bg-red-50 text-red-700 border-red-200",
     "Ready to Fulfill": "bg-zinc-100 text-zinc-700 border-zinc-200",
     "Ordered from Supplier": "bg-violet-50 text-violet-700 border-violet-200",
+    new: "bg-sky-50 text-sky-700 border-sky-200",
+    quoted: "bg-amber-50 text-amber-700 border-amber-200",
+    closed: "bg-zinc-100 text-zinc-700 border-zinc-200",
   };
 
   return (
@@ -78,20 +83,77 @@ function StatusPill({ status }) {
   );
 }
 
+function TabButton({ active, onClick, icon, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+        active
+          ? "border-sky-500 bg-sky-50 text-sky-700"
+          : "border-black/10 bg-white text-zinc-700 hover:bg-zinc-50"
+      }`}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
 export default function AdminOrdersPage() {
+  const [tab, setTab] = useState("orders");
+
   const [orders, setOrders] = useState(mockOrders);
-  const [selectedId, setSelectedId] = useState(mockOrders[0]?.id ?? "");
-  const [filter, setFilter] = useState("All");
+  const [selectedOrderId, setSelectedOrderId] = useState(mockOrders[0]?.id ?? "");
+  const [orderFilter, setOrderFilter] = useState("All");
+
+  const [bespokeRequests, setBespokeRequests] = useState([]);
+  const [bespokeLoading, setBespokeLoading] = useState(true);
+  const [bespokeError, setBespokeError] = useState("");
+  const [selectedBespokeId, setSelectedBespokeId] = useState(null);
+
+  useEffect(() => {
+    async function loadBespoke() {
+      try {
+        setBespokeLoading(true);
+        setBespokeError("");
+
+        const res = await fetch("/api/admin/bespoke");
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : [];
+
+        if (!res.ok) {
+          throw new Error(data?.error || data?.detail || "Failed to load bespoke requests");
+        }
+
+        setBespokeRequests(Array.isArray(data) ? data : []);
+        if (Array.isArray(data) && data.length > 0) {
+          setSelectedBespokeId(data[0].id);
+        }
+      } catch (err) {
+        setBespokeError(err.message || "Failed to load bespoke requests");
+      } finally {
+        setBespokeLoading(false);
+      }
+    }
+
+    loadBespoke();
+  }, []);
 
   const filteredOrders = useMemo(() => {
-    if (filter === "All") return orders;
-    return orders.filter((o) => o.supplier.status === filter || o.status === filter);
-  }, [orders, filter]);
+    if (orderFilter === "All") return orders;
+    return orders.filter((o) => o.supplier.status === orderFilter || o.status === orderFilter);
+  }, [orders, orderFilter]);
 
   const selectedOrder =
-    filteredOrders.find((o) => o.id === selectedId) ||
-    orders.find((o) => o.id === selectedId) ||
+    filteredOrders.find((o) => o.id === selectedOrderId) ||
+    orders.find((o) => o.id === selectedOrderId) ||
     filteredOrders[0];
+
+  const selectedBespoke =
+    bespokeRequests.find((r) => r.id === selectedBespokeId) ||
+    bespokeRequests[0] ||
+    null;
 
   const updateSupplierStatus = (id, newStatus) => {
     setOrders((prev) =>
@@ -112,10 +174,13 @@ export default function AdminOrdersPage() {
   return (
     <div className="min-h-screen bg-white text-zinc-900">
       <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="text-sm text-zinc-500">Valmontier Admin</div>
-            <h1 className="text-3xl font-semibold">Orders</h1>
+            <h1 className="text-3xl font-semibold">Operations Dashboard</h1>
+            <p className="mt-1 text-sm text-zinc-600">
+              Review paid orders, track fulfillment, and manage bespoke requests.
+            </p>
           </div>
 
           <Button asChild variant="secondary" className="border-black/10 bg-black/5 text-zinc-900">
@@ -123,184 +188,359 @@ export default function AdminOrdersPage() {
           </Button>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-2">
-          {["All", "Paid", "Ready to Fulfill", "Ordered from Supplier", "Fulfilled"].map((x) => (
-            <button
-              key={x}
-              type="button"
-              onClick={() => setFilter(x)}
-              className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                filter === x
-                  ? "border-sky-500 bg-sky-50 text-sky-700"
-                  : "border-black/10 bg-white text-zinc-700 hover:bg-zinc-50"
-              }`}
-            >
-              {x}
-            </button>
-          ))}
+        <div className="mb-6 flex flex-wrap gap-3">
+          <TabButton
+            active={tab === "orders"}
+            onClick={() => setTab("orders")}
+            icon={<Package className="h-4 w-4" />}
+          >
+            Orders
+          </TabButton>
+
+          <TabButton
+            active={tab === "bespoke"}
+            onClick={() => setTab("bespoke")}
+            icon={<Sparkles className="h-4 w-4" />}
+          >
+            Bespoke Requests
+          </TabButton>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <Card className="border-black/10 bg-zinc-50">
-            <CardHeader>
-              <CardTitle>Order queue</CardTitle>
-              <CardDescription className="text-zinc-600">
-                Review paid orders and move them through fulfillment.
-              </CardDescription>
-            </CardHeader>
+        {tab === "orders" ? (
+          <>
+            <div className="mb-4 flex flex-wrap gap-2">
+              {["All", "Paid", "Ready to Fulfill", "Ordered from Supplier", "Fulfilled"].map((x) => (
+                <button
+                  key={x}
+                  type="button"
+                  onClick={() => setOrderFilter(x)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                    orderFilter === x
+                      ? "border-sky-500 bg-sky-50 text-sky-700"
+                      : "border-black/10 bg-white text-zinc-700 hover:bg-zinc-50"
+                  }`}
+                >
+                  {x}
+                </button>
+              ))}
+            </div>
 
-            <CardContent className="space-y-3">
-              {filteredOrders.map((order) => {
-                const active = selectedOrder?.id === order.id;
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <Card className="border-black/10 bg-zinc-50">
+                <CardHeader>
+                  <CardTitle>Order queue</CardTitle>
+                  <CardDescription className="text-zinc-600">
+                    Review paid orders and move them through fulfillment.
+                  </CardDescription>
+                </CardHeader>
 
-                return (
-                  <button
-                    key={order.id}
-                    type="button"
-                    onClick={() => setSelectedId(order.id)}
-                    className={`w-full rounded-2xl border p-4 text-left transition ${
-                      active
-                        ? "border-sky-500 bg-sky-50"
-                        : "border-black/10 bg-white hover:bg-zinc-50"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-sm font-semibold text-zinc-900">{order.id}</div>
-                        <div className="mt-1 text-sm text-zinc-700">
-                          {order.customerName} · {order.model}
+                <CardContent className="space-y-3">
+                  {filteredOrders.map((order) => {
+                    const active = selectedOrder?.id === order.id;
+
+                    return (
+                      <button
+                        key={order.id}
+                        type="button"
+                        onClick={() => setSelectedOrderId(order.id)}
+                        className={`w-full rounded-2xl border p-4 text-left transition ${
+                          active
+                            ? "border-sky-500 bg-sky-50"
+                            : "border-black/10 bg-white hover:bg-zinc-50"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="text-sm font-semibold text-zinc-900">{order.id}</div>
+                            <div className="mt-1 text-sm text-zinc-700">
+                              {order.customerName} · {order.model}
+                            </div>
+                            <div className="mt-1 text-xs text-zinc-500">{order.createdAt}</div>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-2">
+                            <StatusPill status={order.status} />
+                            <StatusPill status={order.supplier.status} />
+                          </div>
                         </div>
-                        <div className="mt-1 text-xs text-zinc-500">{order.createdAt}</div>
-                      </div>
 
-                      <div className="flex flex-col items-end gap-2">
-                        <StatusPill status={order.status} />
-                        <StatusPill status={order.supplier.status} />
-                      </div>
-                    </div>
+                        <div className="mt-3 flex items-center justify-between text-sm">
+                          <span className="text-zinc-600">{order.shippingMethod}</span>
+                          <span className="font-medium text-zinc-900">${order.total.toFixed(2)}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </CardContent>
+              </Card>
 
-                    <div className="mt-3 flex items-center justify-between text-sm">
-                      <span className="text-zinc-600">{order.shippingMethod}</span>
-                      <span className="font-medium text-zinc-900">${order.total.toFixed(2)}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
+              <Card className="border-black/10 bg-zinc-50">
+                <CardHeader>
+                  <CardTitle>Order details</CardTitle>
+                  <CardDescription className="text-zinc-600">
+                    Review customer configuration and supplier mapping.
+                  </CardDescription>
+                </CardHeader>
 
-          <Card className="border-black/10 bg-zinc-50">
-            <CardHeader>
-              <CardTitle>Order details</CardTitle>
-              <CardDescription className="text-zinc-600">
-                Review customer configuration and supplier mapping.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-5">
-              {selectedOrder ? (
-                <>
-                  <div>
-                    <div className="text-lg font-semibold text-zinc-900">{selectedOrder.id}</div>
-                    <div className="text-sm text-zinc-600">
-                      {selectedOrder.customerName} · {selectedOrder.email}
-                    </div>
-                  </div>
-
-                  <Separator className="bg-black/10" />
-
-                  <div className="grid gap-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Model</span>
-                      <span>{selectedOrder.model}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Dial</span>
-                      <span>{selectedOrder.dialColor}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Hands</span>
-                      <span>{selectedOrder.handColor}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Strap</span>
-                      <span>{selectedOrder.strap}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Shipping</span>
-                      <span>
-                        {selectedOrder.shippingMethod} · ${selectedOrder.shippingCost.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Total</span>
-                      <span className="font-medium">${selectedOrder.total.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  <Separator className="bg-black/10" />
-
-                  <div>
-                    <div className="mb-2 text-sm font-medium text-zinc-900">Ship to</div>
-                    <div className="text-sm text-zinc-600">
-                      <div>{selectedOrder.address.line1}</div>
+                <CardContent className="space-y-5">
+                  {selectedOrder ? (
+                    <>
                       <div>
-                        {selectedOrder.address.city}, {selectedOrder.address.province}{" "}
-                        {selectedOrder.address.postalCode}
+                        <div className="text-lg font-semibold text-zinc-900">{selectedOrder.id}</div>
+                        <div className="text-sm text-zinc-600">
+                          {selectedOrder.customerName} · {selectedOrder.email}
+                        </div>
                       </div>
-                      <div>{selectedOrder.address.country}</div>
-                    </div>
+
+                      <Separator className="bg-black/10" />
+
+                      <div className="grid gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Model</span>
+                          <span>{selectedOrder.model}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Dial</span>
+                          <span>{selectedOrder.dialColor}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Hands</span>
+                          <span>{selectedOrder.handColor}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Strap</span>
+                          <span>{selectedOrder.strap}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Shipping</span>
+                          <span>
+                            {selectedOrder.shippingMethod} · ${selectedOrder.shippingCost.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Total</span>
+                          <span className="font-medium">${selectedOrder.total.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      <Separator className="bg-black/10" />
+
+                      <div>
+                        <div className="mb-2 text-sm font-medium text-zinc-900">Ship to</div>
+                        <div className="text-sm text-zinc-600">
+                          <div>{selectedOrder.address.line1}</div>
+                          <div>
+                            {selectedOrder.address.city}, {selectedOrder.address.province}{" "}
+                            {selectedOrder.address.postalCode}
+                          </div>
+                          <div>{selectedOrder.address.country}</div>
+                        </div>
+                      </div>
+
+                      <Separator className="bg-black/10" />
+
+                      <div>
+                        <div className="mb-2 text-sm font-medium text-zinc-900">Supplier mapping</div>
+                        <div className="rounded-2xl border border-black/10 bg-white p-4 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-zinc-500">Supplier product</span>
+                            <span className="max-w-[220px] text-right">{selectedOrder.supplier.product}</span>
+                          </div>
+                          <div className="mt-2 flex justify-between">
+                            <span className="text-zinc-500">Variant</span>
+                            <span className="max-w-[220px] text-right">{selectedOrder.supplier.variant}</span>
+                          </div>
+                          <div className="mt-2 flex justify-between">
+                            <span className="text-zinc-500">Supplier cost</span>
+                            <span>${selectedOrder.supplier.cost.toFixed(2)}</span>
+                          </div>
+                          <div className="mt-2 flex justify-between">
+                            <span className="text-zinc-500">Status</span>
+                            <StatusPill status={selectedOrder.supplier.status} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <Button
+                          type="button"
+                          className="bg-sky-600 text-white hover:bg-sky-500"
+                          onClick={() => updateSupplierStatus(selectedOrder.id, "Ordered from Supplier")}
+                        >
+                          Mark as ordered
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="border-black/10 bg-black/5 text-zinc-900"
+                          onClick={() => updateSupplierStatus(selectedOrder.id, "Fulfilled")}
+                        >
+                          Mark as fulfilled
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-sm text-zinc-600">No order selected.</div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <Card className="border-black/10 bg-zinc-50">
+              <CardHeader>
+                <CardTitle>Bespoke request queue</CardTitle>
+                <CardDescription className="text-zinc-600">
+                  Review custom build inquiries and respond with pricing or feasibility.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-3">
+                {bespokeLoading ? (
+                  <div className="text-sm text-zinc-600">Loading bespoke requests...</div>
+                ) : bespokeError ? (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                    {bespokeError}
                   </div>
+                ) : bespokeRequests.length === 0 ? (
+                  <div className="text-sm text-zinc-600">No bespoke requests yet.</div>
+                ) : (
+                  bespokeRequests.map((req) => {
+                    const active = selectedBespoke?.id === req.id;
 
-                  <Separator className="bg-black/10" />
+                    return (
+                      <button
+                        key={req.id}
+                        type="button"
+                        onClick={() => setSelectedBespokeId(req.id)}
+                        className={`w-full rounded-2xl border p-4 text-left transition ${
+                          active
+                            ? "border-sky-500 bg-sky-50"
+                            : "border-black/10 bg-white hover:bg-zinc-50"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="text-sm font-semibold text-zinc-900">{req.name}</div>
+                            <div className="mt-1 text-sm text-zinc-700">
+                              {req.style_brand || "No brand"} · {req.style_build || "No model"}
+                            </div>
+                            <div className="mt-1 text-xs text-zinc-500">{req.email}</div>
+                          </div>
 
-                  <div>
-                    <div className="mb-2 text-sm font-medium text-zinc-900">Supplier mapping</div>
-                    <div className="rounded-2xl border border-black/10 bg-white p-4 text-sm">
+                          <div className="flex flex-col items-end gap-2">
+                            <StatusPill status={req.status || "new"} />
+                            {req.budget ? <Badge className="border border-black/10 bg-black/5 text-zinc-900">{req.budget}</Badge> : null}
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between text-sm">
+                          <span className="text-zinc-600">
+                            {req.case_size || "No size"} · {req.movement || "No movement"}
+                          </span>
+                          <span className="text-zinc-500">
+                            {req.created_at ? new Date(req.created_at).toLocaleDateString() : ""}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-black/10 bg-zinc-50">
+              <CardHeader>
+                <CardTitle>Request details</CardTitle>
+                <CardDescription className="text-zinc-600">
+                  Full bespoke intake details for quoting and follow-up.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-5">
+                {selectedBespoke ? (
+                  <>
+                    <div>
+                      <div className="text-lg font-semibold text-zinc-900">{selectedBespoke.name}</div>
+                      <div className="flex items-center gap-2 text-sm text-zinc-600">
+                        <Mail className="h-4 w-4" />
+                        {selectedBespoke.email}
+                      </div>
+                    </div>
+
+                    <Separator className="bg-black/10" />
+
+                    <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-zinc-500">Supplier product</span>
-                        <span className="max-w-[220px] text-right">{selectedOrder.supplier.product}</span>
+                        <span className="text-zinc-500">Inspired brand</span>
+                        <span>{selectedBespoke.style_brand || "—"}</span>
                       </div>
-                      <div className="mt-2 flex justify-between">
-                        <span className="text-zinc-500">Variant</span>
-                        <span className="max-w-[220px] text-right">{selectedOrder.supplier.variant}</span>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Inspired build</span>
+                        <span>{selectedBespoke.style_build || "—"}</span>
                       </div>
-                      <div className="mt-2 flex justify-between">
-                        <span className="text-zinc-500">Supplier cost</span>
-                        <span>${selectedOrder.supplier.cost.toFixed(2)}</span>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Budget</span>
+                        <span>{selectedBespoke.budget || "—"}</span>
                       </div>
-                      <div className="mt-2 flex justify-between">
-                        <span className="text-zinc-500">Status</span>
-                        <StatusPill status={selectedOrder.supplier.status} />
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Case size</span>
+                        <span>{selectedBespoke.case_size || "—"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Case finish</span>
+                        <span>{selectedBespoke.case_finish || "—"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Bracelet / strap</span>
+                        <span>{selectedBespoke.bracelet || "—"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Hands</span>
+                        <span>{selectedBespoke.hands || "—"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Movement</span>
+                        <span>{selectedBespoke.movement || "—"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Submitted</span>
+                        <span>
+                          {selectedBespoke.created_at
+                            ? new Date(selectedBespoke.created_at).toLocaleString()
+                            : "—"}
+                        </span>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <Button
-                      type="button"
-                      className="bg-sky-600 text-white hover:bg-sky-500"
-                      onClick={() => updateSupplierStatus(selectedOrder.id, "Ordered from Supplier")}
-                    >
-                      Mark as ordered
-                    </Button>
+                    <Separator className="bg-black/10" />
 
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="border-black/10 bg-black/5 text-zinc-900"
-                      onClick={() => updateSupplierStatus(selectedOrder.id, "Fulfilled")}
-                    >
-                      Mark as fulfilled
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <div className="text-sm text-zinc-600">No order selected.</div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    <div>
+                      <div className="mb-2 text-sm font-medium text-zinc-900 flex items-center gap-2">
+                        <ScrollText className="h-4 w-4 text-sky-600" />
+                        Design notes
+                      </div>
+                      <div className="rounded-2xl border border-black/10 bg-white p-4 text-sm leading-relaxed text-zinc-700">
+                        {selectedBespoke.message || "No notes submitted."}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-black/10 bg-white p-4 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-zinc-500">Request status</span>
+                        <StatusPill status={selectedBespoke.status || "new"} />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-zinc-600">No bespoke request selected.</div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -11,7 +11,8 @@ export default function App() {
         <Route path="/" element={<MontrevaleSite />} />
         <Route path="/products/:slug" element={<ProductPage />} />
         <Route path="/admin/orders" element={<AdminOrdersPage />} />
-        <Route path="/admin/bespoke" element={<AdminBespoke />} />
+        <Route path="/admin/bespoke" element={<AdminOrdersPage />} />
+        <Route path="/admin" element={<AdminOrdersPage />} />
       </Routes>
     </BrowserRouter>
   )
