@@ -41,6 +41,7 @@ import {
   Mail,
 } from "lucide-react";
 import { label } from "framer-motion/client";
+import BespokeForm from "@/components/BespokeForm";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -262,98 +263,7 @@ function WatchCard({ w }) {
   );
 }
 
-function BespokeDialog({ onPrefill }) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-      </DialogTrigger>
-      <DialogContent className="border-black/10 bg-white text-zinc-900">
-        <DialogHeader>
-          <DialogTitle>Request a bespoke Valmontier</DialogTitle>
-          <DialogDescription className="text-zinc-500">
-            Share your ideal build. We will review your specs and follow up with next steps.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-3">
-          <div className="grid gap-2">
-            <label className="text-sm text-zinc-200">Your email</label>
-            <Input className="border-black/10 bg-black/5" placeholder="you@domain.com" />
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm text-zinc-200">Budget</label>
-            <Select defaultValue="300-500">
-              <SelectTrigger className="border-black/10 bg-black/5">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent className="border-black/10 bg-white text-zinc-900">
-                <SelectItem value="300-500">$300 to $500</SelectItem>
-                <SelectItem value="500-750">$500 to $750</SelectItem>
-                <SelectItem value="750-1000">$750 to $1,000</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm text-zinc-200">Design notes</label>
-            <Textarea
-              className="min-h-[110px] border-black/10 bg-black/5"
-              placeholder="Case size, dial style, hands, bracelet or strap, movement preference, and any references."
-            />
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs text-zinc-600">
-            <Pill>Case and bracelet</Pill>
-            <Pill>Dial and hands</Pill>
-            <Pill>Movement selection</Pill>
-            <Pill>Assembly to order</Pill>
-          </div>
-        </div>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="secondary"
-            className="border border-black/10 bg-black/5 text-zinc-900 hover:bg-black/10"
-            onClick={() => onPrefill?.()}
-          >
-            Prefill example
-          </Button>
-          <Button className="bg-sky-600 text-white hover:bg-sky-500">
-            Submit request
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export default function ValmontierSite() {
-  const styleCatalog = {
-  Rolex: ["Daytona", "Datejust", "Submariner"],
-  Cartier: ["Tank", "Santos", "Ballon Bleu"],
-  Patek: ["Nautilus Chronograph", "Calatrava", "Aquanaut"],
-  "Grand Seiko": ["Spring Drive Dress", "Heritage", "Sport"],
-}
-  const [bespokeForm, setBespokeForm] = useState({
-  email: "",
-  budget: "300-500",
-  notes: "",
-  caseSize: "40mm",
-  caseFinish: "Brushed steel",
-  bracelet: "Tapered bracelet",
-  hands: "Slim baton",
-  movement: "Automatic",
-  styleBrand: "Rolex",
-  styleBuild: "Daytona",
-});
-
-  const exampleNotes = useMemo(
-    () =>
-      "40mm brushed case, dark sunburst dial, applied indices, slim baton hands, tapered bracelet, automatic movement, minimal branding, strong lume.",
-    []
-  );
-
-  const onPrefill = () =>
-    setBespokeForm((v) => ({
-      ...v,
-      notes: v.notes?.trim() ? v.notes : exampleNotes,
-    }));
 
   const signature = useMemo(() => mockWatches.find((x) => x.slug === "aviator"), [])
 
@@ -524,246 +434,97 @@ export default function ValmontierSite() {
         </section>
 
         <section id="bespoke" className="border-t border-black/10 bg-white">
-          <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
-            <SectionHeading
-              eyebrow="BESPOKE"
-              title="Build your watch, part by part"
-              desc="From the overall case and bracelet to the hands and movement, Valmontier lets you define the details."
-            />
+  <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
+    <SectionHeading
+      eyebrow="BESPOKE"
+      title="Build your watch, part by part"
+      desc="Share your vision for a custom Valmontier and we will follow up with feasibility, pricing, and next steps."
+    />
 
-            <div className="mt-10 grid gap-4 md:grid-cols-2">
-              <Card className="border-black/10 bg-zinc-50">
-                <CardHeader>
-                  <CardTitle className="text-zinc-900">Bespoke request</CardTitle>
-                  <CardDescription className="text-zinc-500">
-                    Submit your specs. We respond with feasibility, pricing, and next steps.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                      <label className="text-sm text-zinc-200">Email</label>
-                      <Input
-                        value={bespokeForm.email}
-                        onChange={(e) => setBespokeForm((v) => ({ ...v, email: e.target.value }))}
-                        className="border-black/10 bg-black/5"
-                        placeholder="you@domain.com"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <label className="text-sm text-zinc-200">Budget</label>
-                      <Select
-                        value={bespokeForm.budget}
-                        onValueChange={(val) => setBespokeForm((v) => ({ ...v, budget: val }))}
-                      >
-                        <SelectTrigger className="border-black/10 bg-black/5">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent className="border-black/10 bg-white text-zinc-900">
-                          <SelectItem value="300-500">$300 to $500</SelectItem>
-                          <SelectItem value="500-750">$500 to $750</SelectItem>
-                          <SelectItem value="750-1000">$750 to $1,000</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-  <div className="grid gap-2">
-    <label className="text-sm text-zinc-200">Inspired brand</label>
-    <Select
-      value={bespokeForm.styleBrand}
-      onValueChange={(val) =>
-        setBespokeForm((v) => ({
-          ...v,
-          styleBrand: val,
-          styleBuild: styleCatalog[val]?.[0] || "",
-        }))
-      }
-    >
-      <SelectTrigger className="border-black/10 bg-black/5">
-        <SelectValue placeholder="Select brand" />
-      </SelectTrigger>
-      <SelectContent className="border-black/10 bg-white text-zinc-900">
-        {Object.keys(styleCatalog).map((brand) => (
-          <SelectItem key={brand} value={brand}>
-            {brand}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
+    <div className="mt-10 grid gap-4 md:grid-cols-2">
+      <Card className="border-black/10 bg-zinc-50">
+        <CardHeader>
+          <CardTitle className="text-zinc-900">Bespoke request</CardTitle>
+          <CardDescription className="text-zinc-500">
+            Submit your idea and we will review the configuration with you directly.
+          </CardDescription>
+        </CardHeader>
 
-  <div className="grid gap-2">
-    <label className="text-sm text-zinc-200">Inspired build</label>
-    <Select
-      value={bespokeForm.styleBuild}
-      onValueChange={(val) => setBespokeForm((v) => ({ ...v, styleBuild: val }))}
-    >
-      <SelectTrigger className="border-black/10 bg-black/5">
-        <SelectValue placeholder="Select model" />
-      </SelectTrigger>
-      <SelectContent className="border-black/10 bg-white text-zinc-900">
-        {(styleCatalog[bespokeForm.styleBrand] || []).map((model) => (
-          <SelectItem key={model} value={model}>
-            {model}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
-</div>
+        <CardContent>
+          <BespokeForm />
+        </CardContent>
+      </Card>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                      <label className="text-sm text-zinc-200">Case size</label>
-                      <Input
-                        value={bespokeForm.caseSize}
-                        onChange={(e) => setBespokeForm((v) => ({ ...v, caseSize: e.target.value }))}
-                        className="border-black/10 bg-black/5"
-                        placeholder="40mm"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <label className="text-sm text-zinc-200">Case finish</label>
-                      <Input
-                        value={bespokeForm.caseFinish}
-                        onChange={(e) => setBespokeForm((v) => ({ ...v, caseFinish: e.target.value }))}
-                        className="border-black/10 bg-black/5"
-                        placeholder="Brushed steel"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <label className="text-sm text-zinc-200">Bracelet or strap</label>
-                      <Input
-                        value={bespokeForm.bracelet}
-                        onChange={(e) => setBespokeForm((v) => ({ ...v, bracelet: e.target.value }))}
-                        className="border-black/10 bg-black/5"
-                        placeholder="Tapered bracelet"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <label className="text-sm text-zinc-200">Hands style</label>
-                      <Input
-                        value={bespokeForm.hands}
-                        onChange={(e) => setBespokeForm((v) => ({ ...v, hands: e.target.value }))}
-                        className="border-black/10 bg-black/5"
-                        placeholder="Slim baton"
-                      />
-                    </div>
-                    <div className="grid gap-2 sm:col-span-2">
-                      <label className="text-sm text-zinc-200">Movement</label>
-                      <Input
-                        value={bespokeForm.movement}
-                        onChange={(e) => setBespokeForm((v) => ({ ...v, movement: e.target.value }))}
-                        className="border-black/10 bg-black/5"
-                        placeholder="Automatic, quartz, or specify a movement"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <label className="text-sm text-zinc-200">Design notes</label>
-                    <Textarea
-                      value={bespokeForm.notes}
-                      onChange={(e) => setBespokeForm((v) => ({ ...v, notes: e.target.value }))}
-                      className="min-h-[120px] border-black/10 bg-black/5"
-                      placeholder="Dial style, indices, lume preference, date or no date, and any inspiration references."
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className="border border-black/10 bg-black/5 text-zinc-900">Case</Badge>
-                    <Badge className="border border-black/10 bg-black/5 text-zinc-900">Bracelet</Badge>
-                    <Badge className="border border-black/10 bg-black/5 text-zinc-900">Dial</Badge>
-                    <Badge className="border border-black/10 bg-black/5 text-zinc-900">Hands</Badge>
-                    <Badge className="border border-black/10 bg-black/5 text-zinc-900">Movement</Badge>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full border border-black/10 bg-black/5 text-zinc-900 hover:bg-black/10 sm:w-auto"
-                    onClick={() => setBespokeForm((v) => ({ ...v, notes: v.notes?.trim() ? v.notes : exampleNotes }))}
-                  >
-                    Prefill example
-                  </Button>
-                  <Button type="button" className="w-full bg-sky-600 text-white hover:bg-sky-500 sm:w-auto">
-                    Submit request
-                  </Button>
-                </CardFooter>
-              </Card>
-
-              <div className="space-y-4">
-                <Card className="border-black/10 bg-zinc-50">
-                  <CardHeader>
-                    <CardTitle className="text-zinc-900">What you can customize</CardTitle>
-                    <CardDescription className="text-zinc-500">
-                      The core components that define the build.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {[
-                      {
-                        icon: <Watch className="h-5 w-5" />,
-                        title: "Case and bracelet",
-                        desc: "Size, finish, lug shape, bracelet taper, clasp style.",
-                      },
-                      {
-                        icon: <Sparkles className="h-5 w-5" />,
-                        title: "Dial and hands",
-                        desc: "Indices, lume, textures, color tone, hand shape.",
-                      },
-                      {
-                        icon: <Compass className="h-5 w-5" />,
-                        title: "Movement",
-                        desc: "Choose supported options or request a specific movement.",
-                      },
-                      {
-                        icon: <Shield className="h-5 w-5" />,
-                        title: "Assembly and QC",
-                        desc: "Component checks, alignment review, and final inspection.",
-                      },
-                    ].map((x) => (
-                      <div key={x.title} className="flex gap-3 rounded-2xl border border-black/10 bg-white p-4">
-                        <div className="mt-0.5 rounded-xl border border-black/10 bg-black/5 p-2 text-sky-500">
-                          {x.icon}
-                        </div>
-                        <div>
-                          <div className="font-medium text-zinc-900">{x.title}</div>
-                          <div className="mt-1 text-sm text-zinc-600">{x.desc}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                <Card className="border-black/10 bg-zinc-50">
-                  <CardHeader>
-                    <CardTitle className="text-zinc-900">Made-to-order model</CardTitle>
-                    <CardDescription className="text-zinc-500">
-                      Why we build after you order.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm text-zinc-600">
-                    <div className="flex items-start gap-3">
-                      <Check className="mt-0.5 h-4 w-4 text-sky-600" />
-                      <p>More choices, less inventory waste, and configurations that feel personal.</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Check className="mt-0.5 h-4 w-4 text-sky-600" />
-                      <p>Better alignment between budget and parts selection.</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Check className="mt-0.5 h-4 w-4 text-sky-600" />
-                      <p>Clear expectations, with spec confirmation before assembly begins.</p>
-                    </div>
-                  </CardContent>
-                </Card>
+      <div className="space-y-4">
+        <Card className="border-black/10 bg-zinc-50">
+          <CardHeader>
+            <CardTitle className="text-zinc-900">What you can customize</CardTitle>
+            <CardDescription className="text-zinc-500">
+              The core components that define the build.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[
+              {
+                icon: <Watch className="h-5 w-5" />,
+                title: "Case and bracelet",
+                desc: "Size, finish, lug shape, bracelet taper, clasp style.",
+              },
+              {
+                icon: <Sparkles className="h-5 w-5" />,
+                title: "Dial and hands",
+                desc: "Indices, lume, textures, color tone, hand shape.",
+              },
+              {
+                icon: <Compass className="h-5 w-5" />,
+                title: "Movement",
+                desc: "Choose supported options or request a specific movement.",
+              },
+              {
+                icon: <Shield className="h-5 w-5" />,
+                title: "Assembly and QC",
+                desc: "Component checks, alignment review, and final inspection.",
+              },
+            ].map((x) => (
+              <div key={x.title} className="flex gap-3 rounded-2xl border border-black/10 bg-white p-4">
+                <div className="mt-0.5 rounded-xl border border-black/10 bg-black/5 p-2 text-sky-500">
+                  {x.icon}
+                </div>
+                <div>
+                  <div className="font-medium text-zinc-900">{x.title}</div>
+                  <div className="mt-1 text-sm text-zinc-600">{x.desc}</div>
+                </div>
               </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="border-black/10 bg-zinc-50">
+          <CardHeader>
+            <CardTitle className="text-zinc-900">Made-to-order model</CardTitle>
+            <CardDescription className="text-zinc-500">
+              Why we build after you order.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-zinc-600">
+            <div className="flex items-start gap-3">
+              <Check className="mt-0.5 h-4 w-4 text-sky-600" />
+              <p>More choices, less inventory waste, and configurations that feel personal.</p>
             </div>
-          </div>
-        </section>
+            <div className="flex items-start gap-3">
+              <Check className="mt-0.5 h-4 w-4 text-sky-600" />
+              <p>Better alignment between budget and parts selection.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <Check className="mt-0.5 h-4 w-4 text-sky-600" />
+              <p>Clear expectations, with spec confirmation before assembly begins.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  </div>
+</section>
 
         <section id="process" className="border-t border-black/10 bg-white">
           <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">

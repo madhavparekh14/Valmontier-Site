@@ -1,100 +1,100 @@
-import React, { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
-export default function BespokeForm({ options, modelName = "Valmontier Aviator" }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [message, setMessage] = useState("");
-  const [status, setStatus] = useState({ type: "idle", text: "" });
+export default function BespokeForm() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    message: ""
+  });
 
-  const payload = useMemo(() => {
-    return {
-      name,
-      email,
-      phone,
-      message,
-      model: modelName,
-      dialColor: options?.dialColor || "",
-      handColor: options?.handColor || "",
-      strap: options?.strap || "",
-    };
-  }, [name, email, phone, message, modelName, options]);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
 
-  const submit = async (e) => {
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const submitForm = async (e) => {
     e.preventDefault();
-    setStatus({ type: "loading", text: "Submitting..." });
+
+    setLoading(true);
+    setStatus("");
 
     try {
       const res = await fetch("/api/bespoke", {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(form)
       });
 
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.error || "Request failed");
+        throw new Error(data.error || "Submission failed");
       }
 
-      setStatus({ type: "ok", text: "Request received. We will reply by email." });
-      setName("");
-      setEmail("");
-      setPhone("");
-      setMessage("");
+      setStatus("Request submitted. We will contact you soon.");
+      setForm({ name: "", email: "", message: "" });
+
     } catch (err) {
-      setStatus({ type: "err", text: "Something went wrong. Please try again." });
+      setStatus("Something went wrong. Please try again.");
     }
+
+    setLoading(false);
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="grid gap-2">
-          <label className="text-sm text-zinc-700">Name</label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} required />
-        </div>
-        <div className="grid gap-2">
-          <label className="text-sm text-zinc-700">Email</label>
-          <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
-        </div>
-      </div>
+    <form onSubmit={submitForm} className="space-y-4 max-w-md">
 
-      <div className="grid gap-2">
-        <label className="text-sm text-zinc-700">Phone (optional)</label>
-        <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
-      </div>
+      <input
+        name="name"
+        placeholder="Your name"
+        value={form.name}
+        onChange={handleChange}
+        required
+        className="w-full border border-black/10 rounded-md px-3 py-2"
+      />
 
-      <div className="grid gap-2">
-        <label className="text-sm text-zinc-700">What do you want?</label>
-        <Textarea value={message} onChange={(e) => setMessage(e.target.value)} required rows={5} />
-      </div>
+      <input
+        name="email"
+        type="email"
+        placeholder="Email"
+        value={form.email}
+        onChange={handleChange}
+        required
+        className="w-full border border-black/10 rounded-md px-3 py-2"
+      />
 
-      <div className="text-xs text-zinc-600">
-        Submitting with: {payload.model} · Dial: {payload.dialColor || "-"} · Hands: {payload.handColor || "-"} · Strap:{" "}
-        {payload.strap || "-"}
-      </div>
+      <textarea
+        name="message"
+        placeholder="Describe your bespoke watch"
+        value={form.message}
+        onChange={handleChange}
+        required
+        rows={4}
+        className="w-full border border-black/10 rounded-md px-3 py-2"
+      />
 
-      <Button type="submit" disabled={status.type === "loading"} className="bg-sky-600 text-white hover:bg-sky-500">
-        {status.type === "loading" ? "Submitting..." : "Submit bespoke request"}
+      <Button
+        type="submit"
+        disabled={loading}
+        className="bg-black text-white hover:bg-zinc-800"
+      >
+        {loading ? "Sending..." : "Submit Request"}
       </Button>
 
-      {status.type !== "idle" ? (
-        <div
-          className={
-            status.type === "ok"
-              ? "text-sm text-emerald-700"
-              : status.type === "err"
-              ? "text-sm text-red-600"
-              : "text-sm text-zinc-700"
-          }
-        >
-          {status.text}
+      {status && (
+        <div className="text-sm text-zinc-600">
+          {status}
         </div>
-      ) : null}
+      )}
+
     </form>
   );
 }
