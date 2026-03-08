@@ -46,65 +46,41 @@ export default function BespokeForm() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setStatus("");
+  e.preventDefault();
 
-    try {
-      const res = await fetch("/api/bespoke", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          budget: form.budget,
-          styleBrand: form.styleBrand,
-          styleBuild: form.styleBuild,
-          caseSize: form.caseSize,
-          caseFinish: form.caseFinish,
-          bracelet: form.bracelet,
-          hands: form.hands,
-          movement: form.movement,
-          notes: form.notes,
-          message: form.notes,
-        }),
-      });
+  try {
+    const res = await fetch("/api/bespoke", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: form.name,
+        email: form.email,
+        budget: form.budget,
+        styleBrand: form.styleBrand,
+        styleBuild: form.styleBuild,
+        caseSize: form.caseSize,
+        caseFinish: form.caseFinish,
+        bracelet: form.bracelet,
+        hands: form.hands,
+        movement: form.movement,
+        notes: form.notes,
+        message: form.notes,
+      }),
+    });
 
-      const text = await res.text();
-      let data = {};
+    const data = await res.json();
 
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch {
-        throw new Error("Invalid server response");
-      }
-
-      if (!res.ok) {
-        throw new Error(data?.error || data?.detail || "Submission failed");
-      }
-
-      setStatus("Request submitted. We will contact you soon.");
-      setForm({
-        name: "",
-        email: "",
-        budget: "300-500",
-        styleBrand: "Rolex",
-        styleBuild: "Daytona",
-        caseSize: "40mm",
-        caseFinish: "Brushed steel",
-        bracelet: "Tapered bracelet",
-        hands: "Slim baton",
-        movement: "Automatic",
-        notes: "",
-      });
-    } catch (err) {
-      setStatus(err.message || "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+    if (!res.ok) {
+      throw new Error(data?.error || "Submission failed");
     }
-  };
+
+    setStatus("Request submitted. We will contact you soon.");
+  } catch (err) {
+    setStatus(err.message || "Submission failed");
+  }
+};
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
