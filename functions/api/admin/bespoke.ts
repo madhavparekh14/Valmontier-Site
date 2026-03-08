@@ -10,15 +10,7 @@ type Env = {
   DB: D1Database;
 };
 
-type PagesFunction<E = unknown> = (context: {
-  request: Request;
-  env: E;
-  params: Record<string, string>;
-  waitUntil: (promise: Promise<any>) => void;
-  next: () => Promise<Response>;
-}) => Promise<Response> | Response;
-
-export const onRequestGet: PagesFunction<Env> = async (context) => {
+export const onRequestGet = async (context: { env: Env }) => {
   try {
     const result = await context.env.DB.prepare(
       `SELECT *
@@ -28,20 +20,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       .bind()
       .all();
 
-    return new Response(JSON.stringify(result.results || []), {
-      status: 200,
+    return new Response(JSON.stringify(result.results), {
       headers: { "content-type": "application/json" },
     });
-  } catch (err: any) {
-    return new Response(
-      JSON.stringify({
-        error: "Server error",
-        detail: String(err?.message || err),
-      }),
-      {
-        status: 500,
-        headers: { "content-type": "application/json" },
-      }
-    );
+  } catch (err) {
+    return new Response(JSON.stringify({ error: "Server error" }), {
+      status: 500,
+    });
   }
 };
