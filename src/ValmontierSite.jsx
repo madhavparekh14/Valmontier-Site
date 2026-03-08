@@ -40,6 +40,7 @@ import {
   Check,
   Mail,
 } from "lucide-react";
+import { label } from "framer-motion/client";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -174,6 +175,7 @@ function Nav() {
     { label: "Bespoke", href: "#bespoke" },
     { label: "Process", href: "#process" },
     { label: "FAQ", href: "#faq" },
+    { label: "Admin", href: "/admin/orders" }
   ];
 
   return (
