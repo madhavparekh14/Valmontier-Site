@@ -18,25 +18,22 @@ type PagesContext<E = unknown> = {
   next: () => Promise<Response>;
 };
 
-export const onRequestGet = async (context: PagesContext<Env>) => {
+export const onRequestPost = async (context) => {
   try {
-    const url = new URL(context.request.url);
-    const showArchived = url.searchParams.get("archived") === "1";
+    const body = await context.request.json();
+    const id = body.id;
 
-    const query = showArchived
-      ? `SELECT * FROM bespoke_requests ORDER BY created_at DESC`
-      : `SELECT * FROM bespoke_requests WHERE archived = 0 ORDER BY created_at DESC`;
+    await context.env.DB.prepare(
+      "UPDATE bespoke_requests SET archived = 1 WHERE id = ?"
+    )
+      .bind(id)
+      .run();
 
-    const result = await context.env.DB.prepare(query)
-      .bind()
-      .all();
-
-    return new Response(JSON.stringify(result.results || []), {
-      status: 200,
+    return new Response(JSON.stringify({ ok: true }), {
       headers: { "content-type": "application/json" },
     });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: "Server error" }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "Archive failed" }), {
       status: 500,
       headers: { "content-type": "application/json" },
     });

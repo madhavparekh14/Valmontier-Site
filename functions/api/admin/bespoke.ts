@@ -24,22 +24,16 @@ export const onRequestGet = async (context: PagesContext<Env>) => {
     const showArchived = url.searchParams.get("archived") === "1";
 
     const query = showArchived
-      ? `SELECT * FROM bespoke_requests ORDER BY created_at DESC`
+      ? `SELECT * FROM bespoke_requests WHERE archived = 1 ORDER BY created_at DESC`
       : `SELECT * FROM bespoke_requests WHERE archived = 0 ORDER BY created_at DESC`;
 
-    const result = await context.env.DB.prepare(
-      `SELECT * FROM bespoke_requests
-      WHERE archived = 0
-      ORDER BY created_at DESC`
-    )
-      .bind()
-      .all();
+    const result = await context.env.DB.prepare(query).bind().all();
 
     return new Response(JSON.stringify(result.results || []), {
       status: 200,
       headers: { "content-type": "application/json" },
     });
-  } catch {
+  } catch (err) {
     return new Response(JSON.stringify({ error: "Server error" }), {
       status: 500,
       headers: { "content-type": "application/json" },
