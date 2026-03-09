@@ -168,22 +168,35 @@ export default function AdminOrdersPage() {
   const handleArchiveBespoke = async (id) => {
     if (!window.confirm("Archive this bespoke request?")) return;
 
-    const res = await fetch("/api/admin/archive-bespoke", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ id }),
-    });
+    try {
+      const res = await fetch("/api/admin/archive-bespoke", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id }),
+      });
 
-    if (!res.ok) {
-      alert("Failed to archive request");
-      return;
+      const text = await res.text();
+
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error(`Non-JSON response: ${text.slice(0, 120)}`);
+      }
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to archive request");
+      }
+
+      const remaining = bespokeRequests.filter((r) => r.id !== id);
+      setBespokeRequests(remaining);
+      setSelectedBespokeId(remaining[0]?.id ?? null);
+    } catch (err) {
+      alert(err.message || "Failed to archive request");
+      console.error("Archive bespoke failed:", err);
     }
-
-    const remaining = bespokeRequests.filter((r) => r.id !== id);
-    setBespokeRequests(remaining);
-    setSelectedBespokeId(remaining[0]?.id ?? null);
   };
 
   const updateSupplierStatus = (id, newStatus) => {

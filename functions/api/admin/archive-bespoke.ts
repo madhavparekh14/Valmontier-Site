@@ -1,7 +1,7 @@
 type D1Database = {
   prepare: (query: string) => {
     bind: (...values: any[]) => {
-      all: () => Promise<{ results: any[] }>;
+      run: () => Promise<any>;
     };
   };
 };
@@ -18,21 +18,32 @@ type PagesContext<E = unknown> = {
   next: () => Promise<Response>;
 };
 
-export const onRequestPost = async (context) => {
+type ArchivePayload = {
+  id?: number | string;
+};
+
+export const onRequestPost = async (context: PagesContext<Env>) => {
   try {
-    const body = await context.request.json();
-    const id = body.id;
+    const body = (await context.request.json()) as ArchivePayload;
+
+    if (!body.id) {
+      return new Response(JSON.stringify({ error: "Missing bespoke id" }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
+    }
 
     await context.env.DB.prepare(
-      "UPDATE bespoke_requests SET archived = 1 WHERE id = ?"
+      `UPDATE bespoke_requests SET archived = 1 WHERE id = ?`
     )
-      .bind(id)
+      .bind(body.id)
       .run();
 
     return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
       headers: { "content-type": "application/json" },
     });
-  } catch {
+  } catch (err) {
     return new Response(JSON.stringify({ error: "Archive failed" }), {
       status: 500,
       headers: { "content-type": "application/json" },
