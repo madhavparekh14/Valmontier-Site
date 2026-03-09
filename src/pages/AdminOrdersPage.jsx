@@ -166,8 +166,6 @@ export default function AdminOrdersPage() {
     null;
 
   const handleArchiveBespoke = async (id) => {
-    if (!window.confirm("Archive this bespoke request?")) return;
-
     try {
       const res = await fetch("/api/admin/archive-bespoke", {
         method: "POST",
