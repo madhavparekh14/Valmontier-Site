@@ -112,6 +112,8 @@ export default function AdminOrdersPage() {
   const [bespokeError, setBespokeError] = useState("");
   const [selectedBespokeId, setSelectedBespokeId] = useState(null);
   const [showArchivedBespoke, setShowArchivedBespoke] = useState(false);
+  const [labelLoading, setLabelLoading] = useState(false);
+  const [labelResult, setLabelResult] = useState(null);
 
   useEffect(() => {
     async function loadBespoke() {
@@ -164,6 +166,52 @@ export default function AdminOrdersPage() {
     bespokeRequests.find((r) => r.id === selectedBespokeId) ||
     bespokeRequests[0] ||
     null;
+  const handleGenerateLabel = async () => {
+  if (!selectedOrder) return;
+
+  try {
+    setLabelLoading(true);
+    setLabelResult(null);
+
+    const res = await fetch("/api/admin/create-shipment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        orderId: selectedOrder.id,
+        serviceId:
+          selectedOrder.shippingMethod === "Purolator Express"
+            ? "PurolatorExpress"
+            : "PurolatorGround",
+        customerName: selectedOrder.customerName,
+        email: selectedOrder.email,
+        phone: selectedOrder.phone || "0000000000",
+        model: selectedOrder.model,
+        address: selectedOrder.address,
+      }),
+    });
+
+    const text = await res.text();
+
+    let data;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      throw new Error(`Non-JSON response: ${text.slice(0, 200)}`);
+    }
+
+    if (!res.ok) {
+      throw new Error(data?.detail || data?.error || "Failed to create shipment");
+    }
+
+    setLabelResult(data);
+  } catch (err) {
+    alert(err.message || "Failed to generate shipping label");
+  } finally {
+    setLabelLoading(false);
+  }
+};
 
   const handleArchiveBespoke = async (id) => {
     try {
@@ -725,12 +773,37 @@ export default function AdminOrdersPage() {
                     <Button
                       type="button"
                       className="bg-sky-600 text-white hover:bg-sky-500"
-                      onClick={() =>
-                        alert("Next step: connect this button to the Purolator Shipping API label creation flow.")
-                      }
+                      onClick={handleGenerateLabel}
+                      disabled={labelLoading}
                     >
-                      Generate shipping label
+                      {labelLoading ? "Generating..." : "Generate shipping label"}
                     </Button>
+                    {labelResult ? (
+                      <div className="rounded-2xl border border-black/10 bg-white p-4 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Shipment PIN</span>
+                          <span>{labelResult.shipmentPin}</span>
+                        </div>
+                        <div className="mt-2 flex justify-between">
+                          <span className="text-zinc-500">Tracking number</span>
+                          <span>{labelResult.trackingNumber}</span>
+                        </div>
+
+                        {labelResult.label?.base64 ? (
+                          <a
+                            className="mt-4 inline-flex rounded-lg border border-black/10 bg-black/5 px-4 py-2 text-sm text-zinc-900 hover:bg-black/10"
+                            href={`data:${labelResult.label.mimeType};base64,${labelResult.label.base64}`}
+                            download={`${selectedOrder.id}-label.pdf`}
+                          >
+                            Download label
+                          </a>
+                        ) : (
+                          <div className="mt-3 text-xs text-zinc-500">
+                            Shipment created, but no label document was returned.
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
                   </>
                 ) : (
                   <div className="text-sm text-zinc-600">No order selected.</div>
