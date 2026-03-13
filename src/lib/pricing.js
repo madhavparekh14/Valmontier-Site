@@ -35,7 +35,6 @@ export const PRICE_MODIFIERS = {
 
 export function getBuildPriceCents(slug, options = {}) {
   const base = PRODUCT_BASE_PRICES[slug] ?? 0;
-
   const strap = PRICE_MODIFIERS.strap[options.strap] ?? 0;
   const handColor = PRICE_MODIFIERS.handColor[options.handColor] ?? 0;
   const dialColor = PRICE_MODIFIERS.dialColor[options.dialColor] ?? 0;

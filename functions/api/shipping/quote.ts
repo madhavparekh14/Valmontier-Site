@@ -14,29 +14,18 @@ type Env = {
 };
 
 const SERVICE_AVAILABILITY_URL =
-  "https://devwebservices.purolator.com/EWS/V2/ServiceAvailability/ServiceAvailabilityService.asmx";
+  "https://webservices.purolator.com/EWS/V2/ServiceAvailability/ServiceAvailabilityService.asmx";
 const ESTIMATES_URL =
-  "https://devwebservices.purolator.com/EWS/V2/Estimating/EstimatingService.asmx";
+  "https://webservices.purolator.com/EWS/V2/Estimating/EstimatingService.asmx";
 
-// Start with fixed package profiles per model
-const PACKAGE_PROFILES: Record<
-  string,
-  { weightKg: number; packageType: "CustomerPackaging" }
-> = {
-  aviator: { weightKg: 0.8, packageType: "CustomerPackaging" },
-  "grand-valmontier": { weightKg: 0.7, packageType: "CustomerPackaging" },
-  chronaut: { weightKg: 0.9, packageType: "CustomerPackaging" },
+const MODEL_WEIGHTS_KG: Record<string, number> = {
+  aviator: 0.8,
+  "grand-valmontier": 0.7,
+  chronaut: 0.9,
 };
 
-const ALLOWED_SERVICES = new Set([
-  "PurolatorGround",
-  "PurolatorExpress",
-]);
-
 function authHeader(key: string, password: string) {
-  const raw = `${key}:${password}`;
-  // Cloudflare Workers supports btoa
-  return `Basic ${btoa(raw)}`;
+  return `Basic ${btoa(`${key}:${password}`)}`;
 }
 
 function esc(value: string) {
@@ -48,109 +37,8 @@ function esc(value: string) {
     .replaceAll("'", "&apos;");
 }
 
-function buildValidateXml(city: string, province: string, country: string, postalCode: string) {
-  return `<?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://purolator.com/pws/datatypes/v1" xmlns:v2="http://purolator.com/pws/serviceavailability/v2">
-  <soapenv:Header/>
-  <soapenv:Body>
-    <v2:ValidateCityPostalCodeZipRequest>
-      <v1:RequestContext>
-        <v1:Version>2.0</v1:Version>
-        <v1:Language>en</v1:Language>
-        <v1:GroupID>Valmontier</v1:GroupID>
-        <v1:RequestReference>validate-address</v1:RequestReference>
-      </v1:RequestContext>
-      <v2:Addresses>
-        <v1:ShortAddress>
-          <v1:City>${esc(city)}</v1:City>
-          <v1:Province>${esc(province)}</v1:Province>
-          <v1:Country>${esc(country)}</v1:Country>
-          <v1:PostalCode>${esc(postalCode)}</v1:PostalCode>
-        </v1:ShortAddress>
-      </v2:Addresses>
-    </v2:ValidateCityPostalCodeZipRequest>
-  </soapenv:Body>
-</soapenv:Envelope>`;
-}
-
-function buildServiceOptionsXml(
-  accountNumber: string,
-  originPostalCode: string,
-  city: string,
-  province: string,
-  country: string,
-  postalCode: string
-) {
-  return `<?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://purolator.com/pws/datatypes/v1" xmlns:v2="http://purolator.com/pws/serviceavailability/v2">
-  <soapenv:Header/>
-  <soapenv:Body>
-    <v2:GetServiceOptionsRequest>
-      <v1:RequestContext>
-        <v1:Version>2.0</v1:Version>
-        <v1:Language>en</v1:Language>
-        <v1:GroupID>Valmontier</v1:GroupID>
-        <v1:RequestReference>service-options</v1:RequestReference>
-      </v1:RequestContext>
-      <v2:BillingAccountNumber>${esc(accountNumber)}</v2:BillingAccountNumber>
-      <v2:SenderAddress>
-        <v1:City>Hamilton</v1:City>
-        <v1:Province>ON</v1:Province>
-        <v1:Country>CA</v1:Country>
-        <v1:PostalCode>${esc(originPostalCode)}</v1:PostalCode>
-      </v2:SenderAddress>
-      <v2:ReceiverAddress>
-        <v1:City>${esc(city)}</v1:City>
-        <v1:Province>${esc(province)}</v1:Province>
-        <v1:Country>${esc(country)}</v1:Country>
-        <v1:PostalCode>${esc(postalCode)}</v1:PostalCode>
-      </v2:ReceiverAddress>
-    </v2:GetServiceOptionsRequest>
-  </soapenv:Body>
-</soapenv:Envelope>`;
-}
-
-function buildQuickEstimateXml(
-  accountNumber: string,
-  originPostalCode: string,
-  city: string,
-  province: string,
-  country: string,
-  postalCode: string,
-  packageType: string,
-  weightKg: number
-) {
-  return `<?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://purolator.com/pws/datatypes/v1" xmlns:v2="http://purolator.com/pws/estimates/v2">
-  <soapenv:Header/>
-  <soapenv:Body>
-    <v2:GetQuickEstimateRequest>
-      <v1:RequestContext>
-        <v1:Version>2.2</v1:Version>
-        <v1:Language>en</v1:Language>
-        <v1:GroupID>Valmontier</v1:GroupID>
-        <v1:RequestReference>quick-estimate</v1:RequestReference>
-      </v1:RequestContext>
-      <v2:BillingAccountNumber>${esc(accountNumber)}</v2:BillingAccountNumber>
-      <v2:SenderPostalCode>${esc(originPostalCode)}</v2:SenderPostalCode>
-      <v2:ReceiverAddress>
-        <v1:City>${esc(city)}</v1:City>
-        <v1:Province>${esc(province)}</v1:Province>
-        <v1:Country>${esc(country)}</v1:Country>
-        <v1:PostalCode>${esc(postalCode)}</v1:PostalCode>
-      </v2:ReceiverAddress>
-      <v2:PackageType>${esc(packageType)}</v2:PackageType>
-      <v2:TotalWeight>
-        <v1:Value>${weightKg.toFixed(3)}</v1:Value>
-        <v1:WeightUnit>kg</v1:WeightUnit>
-      </v2:TotalWeight>
-    </v2:GetQuickEstimateRequest>
-  </soapenv:Body>
-</soapenv:Envelope>`;
-}
-
-async function postSoap(url: string, action: string, xml: string, key: string, password: string) {
-  const res = await fetch(url, {
+function postSoap(url: string, action: string, xml: string, key: string, password: string) {
+  return fetch(url, {
     method: "POST",
     headers: {
       "content-type": "text/xml; charset=utf-8",
@@ -159,53 +47,134 @@ async function postSoap(url: string, action: string, xml: string, key: string, p
     },
     body: xml,
   });
+}
 
-  const text = await res.text();
+function getWeightKg(slug: string) {
+  return MODEL_WEIGHTS_KG[slug] ?? 0.8;
+}
 
-  if (!res.ok) {
-    throw new Error(`Purolator HTTP ${res.status}: ${text.slice(0, 500)}`);
+function buildServiceAvailabilityXml(args: {
+  originPostalCode: string;
+  destinationCity: string;
+  destinationProvince: string;
+  destinationCountry: string;
+  destinationPostalCode: string;
+}) {
+  return `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope
+  xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+  xmlns:v1="http://purolator.com/pws/datatypes/v1"
+  xmlns:v2="http://purolator.com/pws/serviceavailability/v2">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <v2:GetServicesOptionsRequest>
+      <v1:RequestContext>
+        <v1:Version>2.0</v1:Version>
+        <v1:Language>en</v1:Language>
+        <v1:GroupID>Valmontier</v1:GroupID>
+        <v1:RequestReference>shipping-quote</v1:RequestReference>
+      </v1:RequestContext>
+
+      <v2:SenderAddress>
+        <v1:PostalCode>${esc(args.originPostalCode)}</v1:PostalCode>
+      </v2:SenderAddress>
+
+      <v2:ReceiverAddress>
+        <v1:City>${esc(args.destinationCity)}</v1:City>
+        <v1:Province>${esc(args.destinationProvince)}</v1:Province>
+        <v1:Country>${esc(args.destinationCountry)}</v1:Country>
+        <v1:PostalCode>${esc(args.destinationPostalCode)}</v1:PostalCode>
+      </v2:ReceiverAddress>
+    </v2:GetServicesOptionsRequest>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+}
+
+function buildEstimateXml(args: {
+  accountNumber: string;
+  originPostalCode: string;
+  destinationCity: string;
+  destinationProvince: string;
+  destinationCountry: string;
+  destinationPostalCode: string;
+  serviceId: string;
+  weightKg: number;
+}) {
+  return `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope
+  xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+  xmlns:v1="http://purolator.com/pws/datatypes/v1"
+  xmlns:v2="http://purolator.com/pws/estimating/v2">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <v2:GetQuickEstimateRequest>
+      <v1:RequestContext>
+        <v1:Version>2.1</v1:Version>
+        <v1:Language>en</v1:Language>
+        <v1:GroupID>Valmontier</v1:GroupID>
+        <v1:RequestReference>shipping-quote</v1:RequestReference>
+      </v1:RequestContext>
+
+      <v2:BillingAccountNumber>${esc(args.accountNumber)}</v2:BillingAccountNumber>
+
+      <v2:SenderAddress>
+        <v1:PostalCode>${esc(args.originPostalCode)}</v1:PostalCode>
+      </v2:SenderAddress>
+
+      <v2:ReceiverAddress>
+        <v1:City>${esc(args.destinationCity)}</v1:City>
+        <v1:Province>${esc(args.destinationProvince)}</v1:Province>
+        <v1:Country>${esc(args.destinationCountry)}</v1:Country>
+        <v1:PostalCode>${esc(args.destinationPostalCode)}</v1:PostalCode>
+      </v2:ReceiverAddress>
+
+      <v2:PackageType>Package</v2:PackageType>
+      <v2:TotalWeight>
+        <v1:Value>${args.weightKg.toFixed(3)}</v1:Value>
+        <v1:WeightUnit>kg</v1:WeightUnit>
+      </v2:TotalWeight>
+      <v2:TotalPieces>1</v2:TotalPieces>
+      <v2:ServiceID>${esc(args.serviceId)}</v2:ServiceID>
+    </v2:GetQuickEstimateRequest>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+}
+
+function extractTagValues(xml: string, tag: string) {
+  const regex = new RegExp(`<[^:>]*:?${tag}>(.*?)</[^:>]*:?${tag}>`, "gms");
+  const values: string[] = [];
+  let match;
+  while ((match = regex.exec(xml)) !== null) {
+    values.push(match[1]);
   }
-
-  return text;
+  return values;
 }
 
-function textBetween(xml: string, tag: string) {
-  const re = new RegExp(`<[^:>]*:?${tag}>(.*?)</[^:>]*:?${tag}>`, "gms");
-  const out: string[] = [];
-  let m;
-  while ((m = re.exec(xml)) !== null) out.push(m[1]);
-  return out;
+function parseServiceAvailability(xml: string) {
+  const ids = extractTagValues(xml, "ServiceID");
+  const labels = extractTagValues(xml, "ServiceDescription");
+
+  return ids.map((serviceId, i) => ({
+    serviceId,
+    label: labels[i] || serviceId,
+  }));
 }
 
-function parseServiceIds(xml: string) {
-  return textBetween(xml, "ServiceID").filter((x) => ALLOWED_SERVICES.has(x));
+function parseEstimatePriceCents(xml: string) {
+  const values = extractTagValues(xml, "TotalPrice");
+  const raw = values[0] || "0";
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.round(parsed * 100);
 }
 
-function parseEstimates(xml: string) {
-  // Lightweight XML scraping for first pass
-  const blocks = xml.match(/<[^:>]*:?ShipmentEstimate\b[\s\S]*?<\/[^:>]*:?ShipmentEstimate>/gms) || [];
-
-  return blocks
-    .map((block) => {
-      const serviceId = textBetween(block, "ServiceID")[0] || "";
-      const totalPrice = textBetween(block, "TotalPrice")[0] || "0";
-      const expectedDeliveryDate = textBetween(block, "ExpectedDeliveryDate")[0] || "";
-      const estimatedTransitDays = textBetween(block, "EstimatedTransitDays")[0] || "";
-
-      return {
-        serviceId,
-        label: serviceId
-          .replace("Purolator", "Purolator ")
-          .replace("Ground", "Ground")
-          .replace("Express", "Express")
-          .trim(),
-        priceCents: Math.round(Number(totalPrice) * 100),
-        currency: "CAD",
-        expectedDeliveryDate,
-        estimatedTransitDays,
-      };
-    })
-    .filter((x) => x.serviceId && ALLOWED_SERVICES.has(x.serviceId) && Number.isFinite(x.priceCents));
+function dedupeServices(services: Array<{ serviceId: string; label: string }>) {
+  const seen = new Set<string>();
+  return services.filter((s) => {
+    if (seen.has(s.serviceId)) return false;
+    seen.add(s.serviceId);
+    return true;
+  });
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -215,19 +184,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const slug = String(body.slug || "").trim();
     const city = String(body.city || "").trim();
     const province = String(body.province || "").trim();
-    const country = String(body.country || "CA").trim();
     const postalCode = String(body.postalCode || "").trim().replace(/\s+/g, "").toUpperCase();
+    const country = String(body.country || "CA").trim();
 
-    if (!slug || !city || !province || !country || !postalCode) {
-      return new Response(JSON.stringify({ error: "Missing required fields" }), {
-        status: 400,
-        headers: { "content-type": "application/json" },
-      });
-    }
-
-    const profile = PACKAGE_PROFILES[slug];
-    if (!profile) {
-      return new Response(JSON.stringify({ error: "Unknown product slug" }), {
+    if (!slug || !city || !province || !postalCode || !country) {
+      return new Response(JSON.stringify({ error: "Missing required shipping fields" }), {
         status: 400,
         headers: { "content-type": "application/json" },
       });
@@ -240,73 +201,107 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       PUROLATOR_ORIGIN_POSTAL_CODE,
     } = context.env;
 
-    if (!PUROLATOR_KEY || !PUROLATOR_PASSWORD || !PUROLATOR_ACCOUNT_NUMBER || !PUROLATOR_ORIGIN_POSTAL_CODE) {
-      return new Response(JSON.stringify({ error: "Purolator environment variables are missing" }), {
+    if (
+      !PUROLATOR_KEY ||
+      !PUROLATOR_PASSWORD ||
+      !PUROLATOR_ACCOUNT_NUMBER ||
+      !PUROLATOR_ORIGIN_POSTAL_CODE
+    ) {
+      return new Response(JSON.stringify({ error: "Missing Purolator environment variables" }), {
         status: 500,
         headers: { "content-type": "application/json" },
       });
     }
 
-    // 1) Validate address
-    const validateXml = buildValidateXml(city, province, country, postalCode);
-    await postSoap(
+    const svcXml = buildServiceAvailabilityXml({
+      originPostalCode: PUROLATOR_ORIGIN_POSTAL_CODE,
+      destinationCity: city,
+      destinationProvince: province,
+      destinationCountry: country,
+      destinationPostalCode: postalCode,
+    });
+
+    const svcRes = await postSoap(
       SERVICE_AVAILABILITY_URL,
-      "http://purolator.com/pws/serviceavailability/v2/ValidateCityPostalCodeZip",
-      validateXml,
+      "http://purolator.com/pws/serviceavailability/v2/GetServicesOptions",
+      svcXml,
       PUROLATOR_KEY,
       PUROLATOR_PASSWORD
     );
 
-    // 2) Get available services
-    const serviceOptionsXml = buildServiceOptionsXml(
-      PUROLATOR_ACCOUNT_NUMBER,
-      PUROLATOR_ORIGIN_POSTAL_CODE,
-      city,
-      province,
-      country,
-      postalCode
+    const svcText = await svcRes.text();
+
+    if (!svcRes.ok) {
+      return new Response(
+        JSON.stringify({
+          error: "Purolator service availability failed",
+          detail: svcText.slice(0, 1200),
+        }),
+        {
+          status: 502,
+          headers: { "content-type": "application/json" },
+        }
+      );
+    }
+
+    const availableServices = dedupeServices(parseServiceAvailability(svcText)).filter(
+      (s) =>
+        s.serviceId &&
+        /Ground|Express/i.test(s.serviceId)
     );
 
-    const serviceXml = await postSoap(
-      SERVICE_AVAILABILITY_URL,
-      "http://purolator.com/pws/serviceavailability/v2/GetServiceOptions",
-      serviceOptionsXml,
-      PUROLATOR_KEY,
-      PUROLATOR_PASSWORD
-    );
+    const weightKg = getWeightKg(slug);
 
-    const availableServices = new Set(parseServiceIds(serviceXml));
+    const quotedOptions = [];
+    for (const svc of availableServices.slice(0, 8)) {
+      const estXml = buildEstimateXml({
+        accountNumber: PUROLATOR_ACCOUNT_NUMBER,
+        originPostalCode: PUROLATOR_ORIGIN_POSTAL_CODE,
+        destinationCity: city,
+        destinationProvince: province,
+        destinationCountry: country,
+        destinationPostalCode: postalCode,
+        serviceId: svc.serviceId,
+        weightKg,
+      });
 
-    // 3) Get quick estimates
-    const estimateXml = buildQuickEstimateXml(
-      PUROLATOR_ACCOUNT_NUMBER,
-      PUROLATOR_ORIGIN_POSTAL_CODE,
-      city,
-      province,
-      country,
-      postalCode,
-      profile.packageType,
-      profile.weightKg
-    );
+      const estRes = await postSoap(
+        ESTIMATES_URL,
+        "http://purolator.com/pws/estimating/v2/GetQuickEstimate",
+        estXml,
+        PUROLATOR_KEY,
+        PUROLATOR_PASSWORD
+      );
 
-    const estimateRespXml = await postSoap(
-      ESTIMATES_URL,
-      "http://purolator.com/pws/estimates/v2/GetQuickEstimate",
-      estimateXml,
-      PUROLATOR_KEY,
-      PUROLATOR_PASSWORD
-    );
+      const estText = await estRes.text();
 
-    const estimates = parseEstimates(estimateRespXml).filter((x) => availableServices.has(x.serviceId));
+      if (!estRes.ok) continue;
 
-    return new Response(JSON.stringify({ options: estimates }), {
+      quotedOptions.push({
+        serviceId: svc.serviceId,
+        label: svc.label || svc.serviceId,
+        priceCents: parseEstimatePriceCents(estText),
+      });
+    }
+
+    const sorted = quotedOptions
+      .filter((x) => x.priceCents > 0)
+      .sort((a, b) => a.priceCents - b.priceCents);
+
+    return new Response(JSON.stringify({ options: sorted }), {
       status: 200,
       headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: "Shipping quote failed", detail: String(err?.message || err) }), {
-      status: 500,
-      headers: { "content-type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Failed to get shipping quote",
+        detail: String(err?.message || err),
+      }),
+      {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      }
+    );
   }
 };
