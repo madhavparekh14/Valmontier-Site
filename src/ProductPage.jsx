@@ -149,17 +149,19 @@ export default function ProductPage() {
       });
 
       const text = await res.text();
-      let data = {};
+        let data = {};
 
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch {
-        throw new Error(`Non-JSON response: ${text.slice(0, 200)}`);
-      }
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          throw new Error(`Non-JSON response: ${text.slice(0, 200)}`);
+        }
 
-      if (!res.ok) {
-        throw new Error(data?.error || data?.detail || "Failed to get shipping quote");
-      }
+        console.error("Shipping quote response:", data);
+
+        if (!res.ok) {
+          throw new Error(data?.detail || data?.error || "Failed to get shipping quote");
+        }
 
       setShippingOptions(data.options || []);
     } catch (err) {
