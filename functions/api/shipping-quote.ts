@@ -37,8 +37,14 @@ function esc(value: string) {
     .replaceAll("'", "&apos;");
 }
 
-function postSoap(url: string, action: string, xml: string, key: string, password: string) {
-  return fetch(url, {
+async function postSoap(
+  url: string,
+  action: string,
+  xml: string,
+  key: string,
+  password: string
+) {
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "content-type": "text/xml; charset=utf-8",
@@ -47,6 +53,15 @@ function postSoap(url: string, action: string, xml: string, key: string, passwor
     },
     body: xml,
   });
+
+  const text = await res.text();
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    text,
+    contentType: res.headers.get("content-type") || "",
+  };
 }
 
 function getWeightKg(slug: string) {
@@ -143,7 +158,7 @@ function buildEstimateXml(args: {
 function extractTagValues(xml: string, tag: string) {
   const regex = new RegExp(`<[^:>]*:?${tag}>(.*?)</[^:>]*:?${tag}>`, "gms");
   const values: string[] = [];
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = regex.exec(xml)) !== null) {
     values.push(match[1]);
   }
@@ -184,7 +199,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const slug = String(body.slug || "").trim();
     const city = String(body.city || "").trim();
     const province = String(body.province || "").trim();
-    const postalCode = String(body.postalCode || "").trim().replace(/\s+/g, "").toUpperCase();
+    const postalCode = String(body.postalCode || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .toUpperCase();
     const country = String(body.country || "CA").trim();
 
     if (!slug || !city || !province || !postalCode || !country) {
@@ -229,13 +247,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       PUROLATOR_PASSWORD
     );
 
-    const svcText = await svcRes.text();
-
     if (!svcRes.ok) {
       return new Response(
         JSON.stringify({
           error: "Purolator service availability failed",
-          detail: svcText.slice(0, 1200),
+          status: svcRes.status,
+          contentType: svcRes.contentType,
+          detail: svcRes.text.slice(0, 2000),
         }),
         {
           status: 502,
@@ -244,15 +262,44 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       );
     }
 
-    const availableServices = dedupeServices(parseServiceAvailability(svcText)).filter(
-      (s) =>
-        s.serviceId &&
-        /Ground|Express/i.test(s.serviceId)
+    if (!svcRes.text.includes("Envelope")) {
+      return new Response(
+        JSON.stringify({
+          error: "Purolator returned non-SOAP response",
+          contentType: svcRes.contentType,
+          detail: svcRes.text.slice(0, 2000),
+        }),
+        {
+          status: 502,
+          headers: { "content-type": "application/json" },
+        }
+      );
+    }
+
+    const availableServices = dedupeServices(parseServiceAvailability(svcRes.text)).filter(
+      (s) => s.serviceId && /Ground|Express/i.test(s.serviceId)
     );
 
-    const weightKg = getWeightKg(slug);
+    if (availableServices.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: "No Purolator services were returned for this destination",
+          detail: svcRes.text.slice(0, 2000),
+        }),
+        {
+          status: 502,
+          headers: { "content-type": "application/json" },
+        }
+      );
+    }
 
-    const quotedOptions = [];
+    const weightKg = getWeightKg(slug);
+    const quotedOptions: Array<{
+      serviceId: string;
+      label: string;
+      priceCents: number;
+    }> = [];
+
     for (const svc of availableServices.slice(0, 8)) {
       const estXml = buildEstimateXml({
         accountNumber: PUROLATOR_ACCOUNT_NUMBER,
@@ -273,14 +320,39 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         PUROLATOR_PASSWORD
       );
 
-      const estText = await estRes.text();
+      if (!estRes.ok) {
+        return new Response(
+          JSON.stringify({
+            error: `Purolator estimate failed for ${svc.serviceId}`,
+            status: estRes.status,
+            contentType: estRes.contentType,
+            detail: estRes.text.slice(0, 2000),
+          }),
+          {
+            status: 502,
+            headers: { "content-type": "application/json" },
+          }
+        );
+      }
 
-      if (!estRes.ok) continue;
+      if (!estRes.text.includes("Envelope")) {
+        return new Response(
+          JSON.stringify({
+            error: `Purolator returned non-SOAP estimate response for ${svc.serviceId}`,
+            contentType: estRes.contentType,
+            detail: estRes.text.slice(0, 2000),
+          }),
+          {
+            status: 502,
+            headers: { "content-type": "application/json" },
+          }
+        );
+      }
 
       quotedOptions.push({
         serviceId: svc.serviceId,
         label: svc.label || svc.serviceId,
-        priceCents: parseEstimatePriceCents(estText),
+        priceCents: parseEstimatePriceCents(estRes.text),
       });
     }
 
