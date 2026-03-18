@@ -40,8 +40,9 @@ import {
   Check,
   Mail,
 } from "lucide-react";
-import { label } from "framer-motion/client";
 import BespokeForm from "@/components/BespokeForm";
+
+// FIX 1: Removed invalid `import { label } from "framer-motion/client"`
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -56,7 +57,7 @@ const LuxeBg = () => (
   <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
     <div className="absolute -top-40 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-sky-400/15 blur-3xl" />
     <div className="absolute -bottom-40 left-1/3 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-sky-600/10 blur-3xl" />
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.10),transparent_55%)]" />  
+    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.10),transparent_55%)]" />
     <div className="absolute inset-0 opacity-[0.18] [background-image:radial-gradient(rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:18px_18px]" />
   </div>
 );
@@ -68,6 +69,7 @@ const mockWatches = [
     price: "$399.99",
     tags: ["Everyday Wear"],
     desc: "Matte black case with warm gilt accents and a clean, legible dial.",
+    // FIX 2: Replace with your real production Stripe payment links
     paymentLink: "https://buy.stripe.com/3cIcN5dE87F3ajY3eW3wQ01",
     image: "/valmontieraviator.png"
   },
@@ -77,7 +79,8 @@ const mockWatches = [
     price: "$480",
     tags: ["Casual"],
     desc: "Deep charcoal sunburst dial, slim hands, and polished casework.",
-    paymentLink: "https://buy.stripe.com/test_3cIcN5dE87F3ajY3eW3wQ01",
+    // FIX 2: Removed "test_" prefix — replace with your real production Stripe link
+    paymentLink: "https://buy.stripe.com/REPLACE_WITH_REAL_GRAND_VALMONTIER_LINK",
     image: "/grandvalmontier.png"
   },
   {
@@ -86,7 +89,8 @@ const mockWatches = [
     price: "$299.99",
     tags: ["Chronograph"],
     desc: "Brushed steel feel with a dark dial and crisp lume for daily wear.",
-    paymentLink: "https://buy.stripe.com/test_fZubJ19nS4sR9fU6r83wQ02",
+    // FIX 2: Removed "test_" prefix — replace with your real production Stripe link
+    paymentLink: "https://buy.stripe.com/REPLACE_WITH_REAL_CHRONAUT_LINK",
     image: "/valmontierchronaut.png"
   },
 ];
@@ -290,11 +294,12 @@ export default function ValmontierSite() {
                   <Pill>Bespoke parts</Pill>
                 </div>
 
+                {/* FIX 3: Was two <h1> tags — second is now <h2> */}
                 <h1 className="text-balance text-4xl font-['Ballet'] tracking-tight text-zinc-900 md:text-5xl">
                   Valmontier
                 </h1>
 
-                <h1 className="block text-zinc-600">Modern luxury, built to your spec</h1>
+                <h2 className="block text-zinc-600">Modern luxury, built to your spec</h2>
 
                 <p className="text-balance text-base leading-relaxed text-zinc-600 md:text-lg">
                   Choose from existing designs or request a bespoke watch with custom parts, from the case and bracelet
@@ -391,15 +396,15 @@ export default function ValmontierSite() {
         <section id="designs" className="border-t border-black/10 bg-white">
           <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
             <SectionHeading
-  eyebrow="EXISTING DESIGNS"
-  title={
-    <>
-      Order a signature{" "}
-      <span className="font-['Ballet']">Valmontier</span>
-    </>
-  }
-  desc="Select a curated design and place a made to order build with your preferred configuration."
-/>
+              eyebrow="EXISTING DESIGNS"
+              title={
+                <>
+                  Order a signature{" "}
+                  <span className="font-['Ballet']">Valmontier</span>
+                </>
+              }
+              desc="Select a curated design and place a made to order build with your preferred configuration."
+            />
 
             <div className="mt-10 grid gap-4 md:grid-cols-3">
               {mockWatches.map((w) => (
@@ -434,97 +439,97 @@ export default function ValmontierSite() {
         </section>
 
         <section id="bespoke" className="border-t border-black/10 bg-white">
-  <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
-    <SectionHeading
-      eyebrow="BESPOKE"
-      title="Build your watch, part by part"
-      desc="Share your vision for a custom Valmontier and we will follow up with feasibility, pricing, and next steps."
-    />
+          <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
+            <SectionHeading
+              eyebrow="BESPOKE"
+              title="Build your watch, part by part"
+              desc="Share your vision for a custom Valmontier and we will follow up with feasibility, pricing, and next steps."
+            />
 
-    <div className="mt-10 grid gap-4 md:grid-cols-2">
-      <Card className="border-black/10 bg-zinc-50">
-        <CardHeader>
-          <CardTitle className="text-zinc-900">Bespoke request</CardTitle>
-          <CardDescription className="text-zinc-500">
-            Submit your idea and we will review the configuration with you directly.
-          </CardDescription>
-        </CardHeader>
+            <div className="mt-10 grid gap-4 md:grid-cols-2">
+              <Card className="border-black/10 bg-zinc-50">
+                <CardHeader>
+                  <CardTitle className="text-zinc-900">Bespoke request</CardTitle>
+                  <CardDescription className="text-zinc-500">
+                    Submit your idea and we will review the configuration with you directly.
+                  </CardDescription>
+                </CardHeader>
 
-        <CardContent>
-          <BespokeForm />
-        </CardContent>
-      </Card>
+                <CardContent>
+                  <BespokeForm />
+                </CardContent>
+              </Card>
 
-      <div className="space-y-4">
-        <Card className="border-black/10 bg-zinc-50">
-          <CardHeader>
-            <CardTitle className="text-zinc-900">What you can customize</CardTitle>
-            <CardDescription className="text-zinc-500">
-              The core components that define the build.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[
-              {
-                icon: <Watch className="h-5 w-5" />,
-                title: "Case and bracelet",
-                desc: "Size, finish, lug shape, bracelet taper, clasp style.",
-              },
-              {
-                icon: <Sparkles className="h-5 w-5" />,
-                title: "Dial and hands",
-                desc: "Indices, lume, textures, color tone, hand shape.",
-              },
-              {
-                icon: <Compass className="h-5 w-5" />,
-                title: "Movement",
-                desc: "Choose supported options or request a specific movement.",
-              },
-              {
-                icon: <Shield className="h-5 w-5" />,
-                title: "Assembly and QC",
-                desc: "Component checks, alignment review, and final inspection.",
-              },
-            ].map((x) => (
-              <div key={x.title} className="flex gap-3 rounded-2xl border border-black/10 bg-white p-4">
-                <div className="mt-0.5 rounded-xl border border-black/10 bg-black/5 p-2 text-sky-500">
-                  {x.icon}
-                </div>
-                <div>
-                  <div className="font-medium text-zinc-900">{x.title}</div>
-                  <div className="mt-1 text-sm text-zinc-600">{x.desc}</div>
-                </div>
+              <div className="space-y-4">
+                <Card className="border-black/10 bg-zinc-50">
+                  <CardHeader>
+                    <CardTitle className="text-zinc-900">What you can customize</CardTitle>
+                    <CardDescription className="text-zinc-500">
+                      The core components that define the build.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {[
+                      {
+                        icon: <Watch className="h-5 w-5" />,
+                        title: "Case and bracelet",
+                        desc: "Size, finish, lug shape, bracelet taper, clasp style.",
+                      },
+                      {
+                        icon: <Sparkles className="h-5 w-5" />,
+                        title: "Dial and hands",
+                        desc: "Indices, lume, textures, color tone, hand shape.",
+                      },
+                      {
+                        icon: <Compass className="h-5 w-5" />,
+                        title: "Movement",
+                        desc: "Choose supported options or request a specific movement.",
+                      },
+                      {
+                        icon: <Shield className="h-5 w-5" />,
+                        title: "Assembly and QC",
+                        desc: "Component checks, alignment review, and final inspection.",
+                      },
+                    ].map((x) => (
+                      <div key={x.title} className="flex gap-3 rounded-2xl border border-black/10 bg-white p-4">
+                        <div className="mt-0.5 rounded-xl border border-black/10 bg-black/5 p-2 text-sky-500">
+                          {x.icon}
+                        </div>
+                        <div>
+                          <div className="font-medium text-zinc-900">{x.title}</div>
+                          <div className="mt-1 text-sm text-zinc-600">{x.desc}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-black/10 bg-zinc-50">
+                  <CardHeader>
+                    <CardTitle className="text-zinc-900">Made-to-order model</CardTitle>
+                    <CardDescription className="text-zinc-500">
+                      Why we build after you order.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm text-zinc-600">
+                    <div className="flex items-start gap-3">
+                      <Check className="mt-0.5 h-4 w-4 text-sky-600" />
+                      <p>More choices, less inventory waste, and configurations that feel personal.</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Check className="mt-0.5 h-4 w-4 text-sky-600" />
+                      <p>Better alignment between budget and parts selection.</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Check className="mt-0.5 h-4 w-4 text-sky-600" />
+                      <p>Clear expectations, with spec confirmation before assembly begins.</p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-black/10 bg-zinc-50">
-          <CardHeader>
-            <CardTitle className="text-zinc-900">Made-to-order model</CardTitle>
-            <CardDescription className="text-zinc-500">
-              Why we build after you order.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-zinc-600">
-            <div className="flex items-start gap-3">
-              <Check className="mt-0.5 h-4 w-4 text-sky-600" />
-              <p>More choices, less inventory waste, and configurations that feel personal.</p>
             </div>
-            <div className="flex items-start gap-3">
-              <Check className="mt-0.5 h-4 w-4 text-sky-600" />
-              <p>Better alignment between budget and parts selection.</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <Check className="mt-0.5 h-4 w-4 text-sky-600" />
-              <p>Clear expectations, with spec confirmation before assembly begins.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  </div>
-</section>
+          </div>
+        </section>
 
         <section id="process" className="border-t border-black/10 bg-white">
           <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
@@ -649,7 +654,8 @@ export default function ValmontierSite() {
 
             <Separator className="my-8 bg-white/10" />
 
-            <div className="flex flex-col gap-3 text-xs text-zinc-9000 md:flex-row md:items-center md:justify-between">
+            {/* FIX 4: Was "text-zinc-9000" — corrected to "text-zinc-500" */}
+            <div className="flex flex-col gap-3 text-xs text-zinc-500 md:flex-row md:items-center md:justify-between">
               <div>© {new Date().getFullYear()} Valmontier. All rights reserved.</div>
               <div className="flex gap-4">
                 <a className="hover:text-zinc-600" href="#">
