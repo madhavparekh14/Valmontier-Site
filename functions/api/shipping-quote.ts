@@ -58,6 +58,7 @@ async function postSoap(
         "content-type": "text/xml; charset=utf-8",
         SOAPAction: action,
         Authorization: authHeader(key, password),
+        "User-Agent": "ValmontierApp/1.0",
       },
       body: xml,
     });
@@ -268,6 +269,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       svcXml,
       PUROLATOR_KEY,
       PUROLATOR_PASSWORD
+    );
+
+        return new Response(
+      JSON.stringify({
+        status: svcRes.status,
+        contentType: svcRes.contentType,
+        preview: svcRes.text.slice(0, 500),
+      }),
+      {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }
     );
 
     // Network-level failure (status 0 = fetch threw)
