@@ -157,7 +157,8 @@ export default function ProductPage() {
           throw new Error(`Non-JSON response: ${text.slice(0, 200)}`);
         }
 
-        console.error("Shipping quote response:", data);
+        console.error("Shipping quote status:", res.status);
+        console.error("Shipping quote response:", JSON.stringify(data, null, 2));
 
         if (!res.ok) {
           throw new Error(data?.detail || data?.error || "Failed to get shipping quote");
