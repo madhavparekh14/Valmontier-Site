@@ -242,16 +242,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       PUROLATOR_PASSWORD
     );
 
-    if (!svcRes.ok || !svcRes.text.includes("Envelope")) {
-      return new Response(
-        JSON.stringify({
-          error: "Purolator service availability failed",
-          status: svcRes.status,
-          detail: svcRes.text.slice(0, 2000),
-        }),
-        { status: 502, headers: { "content-type": "application/json" } }
-      );
-    }
+    return new Response(
+      JSON.stringify({
+        status: svcRes.status,
+        contentType: svcRes.contentType,
+        preview: svcRes.text.slice(0, 2000),
+      }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
 
     const availableServices = dedupeServices(parseServiceAvailability(svcRes.text)).filter(
       (s) => s.serviceId && /Ground|Express/i.test(s.serviceId)
