@@ -49,10 +49,9 @@ async function postSoap(
     method: "POST",
     headers: {
       "Content-Type": "text/xml; charset=utf-8",
-      "SOAPAction": action,
-      "Authorization": authHeader(key, password),
-      "User-Agent": "Valmontier/1.0",
-      "Accept": "text/xml, application/soap+xml, */*",
+      SOAPAction: `"${action}"`,
+      Authorization: authHeader(key, password),
+      Accept: "text/xml, application/soap+xml, */*",
       "Cache-Control": "no-cache",
     },
     body: xml,
@@ -211,10 +210,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const country = String(body.country || "CA").trim();
 
     if (!slug || !city || !province || !postalCode || !country) {
-      return new Response(JSON.stringify({ error: "Missing required shipping fields" }), {
-        status: 400,
-        headers: { "content-type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Missing required shipping fields" }),
+        {
+          status: 400,
+          headers: { "content-type": "application/json" },
+        }
+      );
     }
 
     const {
@@ -223,6 +225,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       PUROLATOR_ACCOUNT_NUMBER,
       PUROLATOR_ORIGIN_POSTAL_CODE,
     } = context.env;
+
+    if (
+      !PUROLATOR_KEY ||
+      !PUROLATOR_PASSWORD ||
+      !PUROLATOR_ACCOUNT_NUMBER ||
+      !PUROLATOR_ORIGIN_POSTAL_CODE
+    ) {
+      return new Response(
+        JSON.stringify({
+          error: "Missing Purolator environment variables",
+        }),
+        {
+          status: 500,
+          headers: { "content-type": "application/json" },
+        }
+      );
+    }
 
     const originPostalCode = normalizePostal(PUROLATOR_ORIGIN_POSTAL_CODE);
 
@@ -242,22 +261,44 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       PUROLATOR_PASSWORD
     );
 
-    return new Response(
-      JSON.stringify({
-        status: svcRes.status,
-        contentType: svcRes.contentType,
-        preview: svcRes.text.slice(0, 2000),
-      }),
-      { status: 200, headers: { "content-type": "application/json" } }
-    );
+    if (!svcRes.ok) {
+      return new Response(
+        JSON.stringify({
+          error: "Purolator service availability failed",
+          status: svcRes.status,
+          contentType: svcRes.contentType,
+          preview: svcRes.text.slice(0, 2000),
+        }),
+        {
+          status: 502,
+          headers: { "content-type": "application/json" },
+        }
+      );
+    }
 
     const availableServices = dedupeServices(parseServiceAvailability(svcRes.text)).filter(
       (s) => s.serviceId && /Ground|Express/i.test(s.serviceId)
     );
 
-    const weightKg = getWeightKg(slug);
+    if (availableServices.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: "No Purolator services found",
+          preview: svcRes.text.slice(0, 2000),
+        }),
+        {
+          status: 404,
+          headers: { "content-type": "application/json" },
+        }
+      );
+    }
 
-    const quotedOptions = [];
+    const weightKg = getWeightKg(slug);
+    const quotedOptions: Array<{
+      serviceId: string;
+      label: string;
+      priceCents: number;
+    }> = [];
 
     for (const svc of availableServices.slice(0, 8)) {
       const estXml = buildEstimateXml({
@@ -279,7 +320,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         PUROLATOR_PASSWORD
       );
 
-      if (!estRes.ok || !estRes.text.includes("Envelope")) continue;
+      if (!estRes.ok) {
+        continue;
+      }
+
+      if (!estRes.text.includes("Envelope")) {
+        continue;
+      }
 
       quotedOptions.push({
         serviceId: svc.serviceId,
