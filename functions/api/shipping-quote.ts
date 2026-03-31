@@ -15,6 +15,7 @@ type Env = {
 
 const SERVICE_AVAILABILITY_URL =
   "https://webservices.purolator.com/EWS/V2/ServiceAvailability/ServiceAvailabilityService.asmx";
+
 const ESTIMATES_URL =
   "https://webservices.purolator.com/EWS/V2/Estimating/EstimatingService.asmx";
 
@@ -37,59 +38,42 @@ function esc(value: string) {
     .replaceAll("'", "&apos;");
 }
 
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
-
 async function postSoap(
   url: string,
   action: string,
   xml: string,
   key: string,
   password: string
-): Promise<{ ok: boolean; status: number; text: string; contentType: string }> {
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "content-type": "text/xml; charset=utf-8",
-        SOAPAction: action,
-        Authorization: authHeader(key, password),
-        "User-Agent": "ValmontierApp/1.0",
-      },
-      body: xml,
-    });
+) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/xml; charset=utf-8",
+      "SOAPAction": action,
+      "Authorization": authHeader(key, password),
+      "User-Agent": "Valmontier/1.0",
+      "Accept": "text/xml, application/soap+xml, */*",
+      "Cache-Control": "no-cache",
+    },
+    body: xml,
+  });
 
-    const text = await res.text();
-    console.log(`[postSoap] ${action} → status=${res.status} bodyLen=${text.length} ct=${res.headers.get("content-type")}`);
+  const text = await res.text();
 
-    return {
-      ok: res.ok,
-      status: res.status,
-      text,
-      contentType: res.headers.get("content-type") || "",
-    };
-  } catch (err: any) {
-    // Network-level failure (DNS, timeout, connection refused, etc.)
-    console.error(`[postSoap] Network error for ${action}:`, String(err?.message || err));
-    return {
-      ok: false,
-      status: 0,
-      text: `Network error: ${String(err?.message || err)}`,
-      contentType: "",
-    };
-  }
+  return {
+    ok: res.ok,
+    status: res.status,
+    text,
+    contentType: res.headers.get("content-type") || "",
+  };
 }
 
 function getWeightKg(slug: string) {
   return MODEL_WEIGHTS_KG[slug] ?? 0.8;
 }
 
-function isSoapResponse(text: string) {
-  return text.includes("Envelope") && text.includes("Body");
+function normalizePostal(code: string) {
+  return code.trim().replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 }
 
 function buildServiceAvailabilityXml(args: {
@@ -108,7 +92,7 @@ function buildServiceAvailabilityXml(args: {
   <soapenv:Body>
     <v2:GetServicesOptionsRequest>
       <v1:RequestContext>
-        <v1:Version>2.0</v1:Version>
+        <v1:Version>1.3</v1:Version>
         <v1:Language>en</v1:Language>
         <v1:GroupID>Valmontier</v1:GroupID>
         <v1:RequestReference>shipping-quote</v1:RequestReference>
@@ -199,11 +183,11 @@ function parseServiceAvailability(xml: string) {
   }));
 }
 
-function parseEstimatePriceCents(xml: string): number {
+function parseEstimatePriceCents(xml: string) {
   const values = extractTagValues(xml, "TotalPrice");
   const raw = values[0] || "0";
   const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  if (!Number.isFinite(parsed)) return 0;
   return Math.round(parsed * 100);
 }
 
@@ -218,30 +202,21 @@ function dedupeServices(services: Array<{ serviceId: string; label: string }>) {
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
-    // ── 1. Parse + validate request body ──────────────────────────────────────
-    let body: any;
-    try {
-      body = await context.request.json();
-    } catch {
-      return json({ error: "Invalid JSON body" }, 400);
-    }
+    const body = await context.request.json();
 
     const slug = String(body.slug || "").trim();
     const city = String(body.city || "").trim();
     const province = String(body.province || "").trim();
-    const postalCode = String(body.postalCode || "")
-      .trim()
-      .replace(/\s+/g, "")
-      .toUpperCase();
+    const postalCode = normalizePostal(String(body.postalCode || ""));
     const country = String(body.country || "CA").trim();
 
     if (!slug || !city || !province || !postalCode || !country) {
-      return json({ error: "Missing required fields: slug, city, province, postalCode, country" }, 400);
+      return new Response(JSON.stringify({ error: "Missing required shipping fields" }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
 
-    console.log(`[shipping-quote] slug=${slug} city=${city} province=${province} postal=${postalCode} country=${country}`);
-
-    // ── 2. Validate env vars ───────────────────────────────────────────────────
     const {
       PUROLATOR_KEY,
       PUROLATOR_PASSWORD,
@@ -249,14 +224,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       PUROLATOR_ORIGIN_POSTAL_CODE,
     } = context.env;
 
-    if (!PUROLATOR_KEY || !PUROLATOR_PASSWORD || !PUROLATOR_ACCOUNT_NUMBER || !PUROLATOR_ORIGIN_POSTAL_CODE) {
-      console.error("[shipping-quote] Missing one or more Purolator env vars");
-      return json({ error: "Server misconfiguration: missing Purolator credentials" }, 500);
-    }
+    const originPostalCode = normalizePostal(PUROLATOR_ORIGIN_POSTAL_CODE);
 
-    // ── 3. Fetch available services ────────────────────────────────────────────
     const svcXml = buildServiceAvailabilityXml({
-      originPostalCode: PUROLATOR_ORIGIN_POSTAL_CODE,
+      originPostalCode,
       destinationCity: city,
       destinationProvince: province,
       destinationCountry: country,
@@ -271,63 +242,29 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       PUROLATOR_PASSWORD
     );
 
-        return new Response(
-      JSON.stringify({
-        status: svcRes.status,
-        contentType: svcRes.contentType,
-        preview: svcRes.text.slice(0, 500),
-      }),
-      {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }
-    );
-
-    // Network-level failure (status 0 = fetch threw)
-    if (svcRes.status === 0) {
-      return json({
-        error: "Could not connect to Purolator. The service may be unreachable from this server.",
-        detail: svcRes.text,
-      }, 502);
-    }
-
-    if (!svcRes.ok) {
-      console.error("[shipping-quote] Service availability HTTP error:", svcRes.status, svcRes.text.slice(0, 500));
-      return json({
-        error: `Purolator service availability returned HTTP ${svcRes.status}`,
-        detail: svcRes.text.slice(0, 1000),
-      }, 502);
-    }
-
-    if (!isSoapResponse(svcRes.text)) {
-      console.error("[shipping-quote] Non-SOAP service availability response:", svcRes.text.slice(0, 500));
-      return json({
-        error: "Purolator returned an unexpected non-SOAP response for service availability.",
-        detail: svcRes.text.slice(0, 1000),
-      }, 502);
+    if (!svcRes.ok || !svcRes.text.includes("Envelope")) {
+      return new Response(
+        JSON.stringify({
+          error: "Purolator service availability failed",
+          status: svcRes.status,
+          detail: svcRes.text.slice(0, 2000),
+        }),
+        { status: 502, headers: { "content-type": "application/json" } }
+      );
     }
 
     const availableServices = dedupeServices(parseServiceAvailability(svcRes.text)).filter(
       (s) => s.serviceId && /Ground|Express/i.test(s.serviceId)
     );
 
-    console.log(`[shipping-quote] Available services: ${availableServices.map((s) => s.serviceId).join(", ") || "none"}`);
-
-    if (availableServices.length === 0) {
-      return json({
-        error: "No Purolator Ground or Express services are available for this destination.",
-      }, 404);
-    }
-
-    // ── 4. Fetch price estimates (skip failures, don't abort) ─────────────────
     const weightKg = getWeightKg(slug);
-    const quotedOptions: Array<{ serviceId: string; label: string; priceCents: number }> = [];
-    const skipped: string[] = [];
+
+    const quotedOptions = [];
 
     for (const svc of availableServices.slice(0, 8)) {
       const estXml = buildEstimateXml({
         accountNumber: PUROLATOR_ACCOUNT_NUMBER,
-        originPostalCode: PUROLATOR_ORIGIN_POSTAL_CODE,
+        originPostalCode,
         destinationCity: city,
         destinationProvince: province,
         destinationCountry: country,
@@ -344,46 +281,30 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         PUROLATOR_PASSWORD
       );
 
-      if (estRes.status === 0 || !estRes.ok || !isSoapResponse(estRes.text)) {
-        // Log and skip this service — don't abort the whole request
-        console.warn(`[shipping-quote] Skipping ${svc.serviceId}: status=${estRes.status} soap=${isSoapResponse(estRes.text)}`);
-        skipped.push(svc.serviceId);
-        continue;
-      }
+      if (!estRes.ok || !estRes.text.includes("Envelope")) continue;
 
-      const priceCents = parseEstimatePriceCents(estRes.text);
-
-      if (priceCents <= 0) {
-        console.warn(`[shipping-quote] Skipping ${svc.serviceId}: priceCents=${priceCents}`);
-        skipped.push(svc.serviceId);
-        continue;
-      }
-
-      console.log(`[shipping-quote] ${svc.serviceId} → ${priceCents} cents`);
       quotedOptions.push({
         serviceId: svc.serviceId,
         label: svc.label || svc.serviceId,
-        priceCents,
+        priceCents: parseEstimatePriceCents(estRes.text),
       });
     }
 
-    // ── 5. Return results ──────────────────────────────────────────────────────
-    const sorted = quotedOptions.sort((a, b) => a.priceCents - b.priceCents);
+    const sorted = quotedOptions
+      .filter((x) => x.priceCents > 0)
+      .sort((a, b) => a.priceCents - b.priceCents);
 
-    if (sorted.length === 0) {
-      return json({
-        error: "Purolator returned no priceable shipping options for this destination.",
-        skipped,
-      }, 404);
-    }
-
-    return json({ options: sorted, skipped: skipped.length > 0 ? skipped : undefined });
-
+    return new Response(JSON.stringify({ options: sorted }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
   } catch (err: any) {
-    console.error("[shipping-quote] Unexpected error:", String(err?.message || err));
-    return json({
-      error: "An unexpected error occurred while fetching shipping rates.",
-      detail: String(err?.message || err),
-    }, 500);
+    return new Response(
+      JSON.stringify({
+        error: "Failed to get shipping quote",
+        detail: String(err?.message || err),
+      }),
+      { status: 500, headers: { "content-type": "application/json" } }
+    );
   }
 };
