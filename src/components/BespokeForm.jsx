@@ -11,11 +11,10 @@ import {
 } from "@/components/ui/select";
 
 const styleCatalog = {
-  Rolex: ["Daytona", "Datejust", "Submariner", "DayDate", "Land Dweller"],
-  Cartier: ["Tank", "Santos", "Ballon Bleu", "Panthère"],
-  Patek: ["Nautilus", "Aquanaut", "Cubitus"],
-  Grand: ["Spring Drive Dress", "Heritage", "Sport"],
-  Audemars: ["Royal Oak"],
+  Rolex: ["Daytona", "Datejust", "Submariner"],
+  Cartier: ["Tank", "Santos", "Ballon Bleu"],
+  Patek: ["Nautilus Chronograph", "Calatrava", "Aquanaut"],
+  "Grand Seiko": ["Spring Drive Dress", "Heritage", "Sport"],
 };
 
 export default function BespokeForm() {
