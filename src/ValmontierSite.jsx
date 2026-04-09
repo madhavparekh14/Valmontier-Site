@@ -403,10 +403,10 @@ export default function ValmontierSite() {
                   <span className="font-['Ballet']">Valmontier</span>
                 </>
               }
-              desc="Select a curated design and place a made to order build with your preferred configuration."
+              desc="COMING SOON: Explore existing designs and place made to order builds with your preferred configuration."
             />
 
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
+           {/* <div className="mt-10 grid gap-4 md:grid-cols-3">
               {mockWatches.map((w) => (
                 <motion.div
                   key={w.name}
@@ -419,7 +419,7 @@ export default function ValmontierSite() {
                   <WatchCard w={w} />
                 </motion.div>
               ))}
-            </div>
+            </div> */}
 
             <div className="mt-10 rounded-3xl border border-black/10 bg-zinc-50 p-6 md:p-8">
               <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
