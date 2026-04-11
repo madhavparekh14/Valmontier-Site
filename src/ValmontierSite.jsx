@@ -564,7 +564,7 @@ export default function ValmontierSite() {
               ))}
             </div>
 
-            <div className="mt-10 rounded-3xl border border-black/10 bg-zinc-50 p-6 md:p-8">
+           {/*} <div className="mt-10 rounded-3xl border border-black/10 bg-zinc-50 p-6 md:p-8">
               <div className="grid gap-6 md:grid-cols-3 md:items-center">
                 <div className="md:col-span-2">
                   <div className="text-xs tracking-[0.32em] text-sky-600">NEXT STEP</div>
@@ -586,7 +586,7 @@ export default function ValmontierSite() {
                   </Button>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </section>
 
