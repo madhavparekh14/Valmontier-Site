@@ -366,8 +366,11 @@ export default function ValmontierSite() {
                       </div>
                     </div>
 
-                    <Button asChild className="bg-sky-600 text-white hover:bg-sky-500">
-                      <Link to={`/products/${signature?.slug}`}>View Aviator details</Link>
+                    <Button
+                      className="bg-sky-600 text-white hover:bg-sky-500"
+                      onClick={() => alert("Signature Builds Coming Soon")}
+                    >
+                      View Aviator details
                     </Button>
                   </div>
                 </div>
