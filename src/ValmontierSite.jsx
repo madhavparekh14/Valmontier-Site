@@ -270,6 +270,7 @@ function WatchCard({ w }) {
 export default function ValmontierSite() {
 
   const signature = useMemo(() => mockWatches.find((x) => x.slug === "aviator"), [])
+  const [showMessage, setShowMessage] = useState(false);
 
   return (
     <div className="min-h-screen bg-white text-zinc-900">
@@ -368,10 +369,16 @@ export default function ValmontierSite() {
 
                     <Button
                       className="bg-sky-600 text-white hover:bg-sky-500"
-                      onClick={() => alert("Signature Builds Coming Soon")}
+                      onClick={() => setShowMessage(true)}
                     >
                       View Aviator details
                     </Button>
+
+                    {showMessage && (
+                      <p className="text-sm text-sky-600 text-center">
+                        Signature Builds Coming Soon
+                      </p>
+                    )}
                   </div>
                 </div>
 
