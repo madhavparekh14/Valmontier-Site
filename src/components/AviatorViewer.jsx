@@ -238,8 +238,6 @@ function AviatorModel({ options }) {
           envMapIntensity: 1.4,
         });
 
-        // quickrelease only exists visually on bracelet mode
-        if (obj.name === "quickrelease") obj.visible = !!options.quickRelease && isBracelet;
         return;
       }
 
