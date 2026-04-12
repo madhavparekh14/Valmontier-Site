@@ -362,7 +362,7 @@ export default function AviatorViewer({ options }) {
         />
       </Canvas>
 
-      {showHint ? (
+     {/*} {showHint ? (
         <div className="pointer-events-none absolute inset-0 flex items-end justify-center p-4">
           <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white/80 px-4 py-3 backdrop-blur">
             <div className="text-sm font-medium text-zinc-900">Controls</div>
@@ -388,7 +388,7 @@ export default function AviatorViewer({ options }) {
             </div>
           </div>
         </div>
-      ) : null}
+      ) */}
     </div>
   );
 }
