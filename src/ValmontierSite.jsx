@@ -271,7 +271,8 @@ function WatchCard({ w }) {
 export default function ValmontierSite() {
 
   const signature = useMemo(() => mockWatches.find((x) => x.slug === "aviator"), [])
-  const [aviatorOptions] = useState({
+  const [showMessage, setShowMessage] = useState(false);
+  const [aviatorOptions, setAviatorOptions] = useState({
     dialColor: "White Roman",
     handColor: "Blue",
     strap: "Steel Bracelet",
