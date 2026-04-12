@@ -41,6 +41,7 @@ import {
   Mail,
 } from "lucide-react";
 import BespokeForm from "@/components/BespokeForm";
+import AviatorViewer from "@/components/AviatorViewer";
 
 // FIX 1: Removed invalid `import { label } from "framer-motion/client"`
 
@@ -270,7 +271,12 @@ function WatchCard({ w }) {
 export default function ValmontierSite() {
 
   const signature = useMemo(() => mockWatches.find((x) => x.slug === "aviator"), [])
-  const [showMessage, setShowMessage] = useState(false);
+  const [aviatorOptions] = useState({
+    dialColor: "White Roman",
+    handColor: "Blue",
+    strap: "Steel Bracelet",
+    quickRelease: false,
+  });
 
   return (
     <div className="min-h-screen bg-white text-zinc-900">
@@ -348,23 +354,8 @@ export default function ValmontierSite() {
                       </Badge>
                     </div>
 
-                    <div className="grid gap-3 rounded-2xl border border-black/10 bg-white p-5">
-                      <div className="flex items-center gap-3 text-sm text-zinc-600">
-                        <Check className="h-4 w-4 text-sky-600" />
-                        Stainless steel case and bracelet
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-zinc-600">
-                        <Check className="h-4 w-4 text-sky-600" />
-                        White Roman numeral dial
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-zinc-600">
-                        <Check className="h-4 w-4 text-sky-600" />
-                        Blued hands
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-zinc-600">
-                        <Check className="h-4 w-4 text-sky-600" />
-                        Made to order
-                      </div>
+                    <div className="overflow-hidden rounded-2xl border border-black/10 bg-white">
+                      <AviatorViewer options={aviatorOptions} />
                     </div>
 
                     <Button
@@ -379,23 +370,6 @@ export default function ValmontierSite() {
                         Signature Builds Coming Soon
                       </p>
                     )}
-                  </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-black/10 bg-black/5 p-4">
-                    <div className="flex items-center gap-2 text-sm text-black-200">
-                      <Shield className="h-4 w-4 text-sky-600" />
-                      Quality checks
-                    </div>
-                    <div className="mt-1 text-xs text-zinc-500">Component inspection and assembly review.</div>
-                  </div>
-                  <div className="rounded-2xl border border-black/10 bg-black/5 p-4">
-                    <div className="flex items-center gap-2 text-sm text-black-200">
-                      <Sparkles className="h-4 w-4 text-sky-600" />
-                      Bespoke options
-                    </div>
-                    <div className="mt-1 text-xs text-zinc-500">Hands, dial, bracelet, and movement.</div>
                   </div>
                 </div>
               </motion.div>
