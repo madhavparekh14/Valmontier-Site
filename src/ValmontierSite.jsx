@@ -524,7 +524,7 @@ export default function ValmontierSite() {
                   <CardContent className="space-y-3 text-sm text-zinc-600">
                     <div className="flex items-start gap-3">
                       <Check className="mt-0.5 h-4 w-4 text-sky-600" />
-                      <p>More choices, less inventory waste, and configurations that feel personal.</p>
+                      <p>More choices, less inventory waste, and personal configurations.</p>
                     </div>
                     <div className="flex items-start gap-3">
                       <Check className="mt-0.5 h-4 w-4 text-sky-600" />
