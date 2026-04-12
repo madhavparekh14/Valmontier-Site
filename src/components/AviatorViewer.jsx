@@ -333,7 +333,7 @@ export default function AviatorViewer({ options }) {
 
   return (
     <div
-      className="relative h-[420px] w-full overflow-hidden rounded-3xl border border-black/10 bg-white"
+      className="relative h-[420px] w-full overflow-hidden rounded-2xl border border-black/10 bg-white"
       onPointerDown={() => setShowHint(false)}
       onTouchStart={() => setShowHint(false)}
     >
@@ -346,6 +346,7 @@ export default function AviatorViewer({ options }) {
         </Suspense>
 
         <OrbitControls
+          autoRotate
           makeDefault
           enablePan
           target={[0, 0.02, 0]}
