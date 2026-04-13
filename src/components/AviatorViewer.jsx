@@ -349,7 +349,7 @@ export default function AviatorViewer({ options }) {
           autoRotate
           makeDefault
           enablePan
-          target={[0, 0.02, 0]}
+          target={[0, 0, 0]}
           enableDamping
           dampingFactor={0.08}
           rotateSpeed={0.9}

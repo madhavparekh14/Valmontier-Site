@@ -177,9 +177,10 @@ function Stat({ label, value }) {
 
 function Nav() {
   const links = [
-    { label: "Designs", href: "#designs" },
+    /*{ label: "Designs", href: "#designs" }, */
     { label: "Bespoke", href: "#bespoke" },
     { label: "Process", href: "#process" },
+    { label: "Gallery", href: "#gallery" },
     { label: "FAQ", href: "#faq" },
     { label: "Admin", href: "/admin/orders" }
   ];
@@ -202,13 +203,13 @@ function Nav() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Button
+         {/*} <Button
             asChild
             variant="secondary"
             className="hidden border border-black/10 bg-black/5 text-zinc-900 hover:bg-black/10 md:inline-flex"
           >
             <a href="#designs">Browse designs</a>
-          </Button>
+          </Button> */}
           <Button asChild className="bg-sky-600 text-white hover:bg-sky-500">
             <a href="#bespoke">Request bespoke</a>
           </Button>
@@ -315,13 +316,13 @@ export default function ValmontierSite() {
                 </p>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <Button asChild className="bg-sky-600 text-white hover:bg-sky-500">
+                 {/* <Button asChild className="bg-sky-600 text-white hover:bg-sky-500">
                     <a href="#designs">Explore existing designs</a>
-                  </Button>
+                  </Button> */}
                   <Button
                     asChild
                     variant="secondary"
-                    className="border border-black/10 bg-black/5 text-zinc-900 hover:bg-black/10"
+                    className="bg-sky-600 text-white hover:bg-sky-500"
                   >
                     <a href="#bespoke">Request a custom build</a>
                   </Button>
@@ -368,7 +369,7 @@ export default function ValmontierSite() {
 
                     {showMessage && (
                       <p className="text-sm text-sky-600 text-center">
-                        Signature Builds Coming Soon
+                        Signature Builds Coming Soon! In the meantime request a bespoke build to create your perfect Valmontier.
                       </p>
                     )}
                   </div>
@@ -436,7 +437,7 @@ export default function ValmontierSite() {
                 <CardHeader>
                   <CardTitle className="text-zinc-900">Bespoke request</CardTitle>
                   <CardDescription className="text-zinc-500">
-                    Submit your idea and we will review the configuration with you directly.
+                    Submit a custom watch request, and we will review the build with you directly.
                   </CardDescription>
                 </CardHeader>
 
@@ -572,6 +573,35 @@ export default function ValmontierSite() {
                 </div>
               </div>
             </div> */}
+          </div>
+        </section>
+
+        <section id="gallery" className="border-t border-black/10 bg-white">
+          <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
+            <SectionHeading eyebrow="GALLERY" title="Valmontier in the wild" desc="A glimpse of the experience and style." />
+
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              {[
+                "/gallery1.jpg",
+                "/gallery2.jpg",
+                "/gallery3.jpg",
+                "/gallery4.jpg",
+                "/gallery5.jpg",
+                "/gallery6.jpg",
+              ].map((src, i) => (
+                <motion.div
+                  key={i}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.25 }}
+                  variants={fadeUp}
+                  transition={{ duration: 0.55, ease: "easeOut", delay: i * 0.1 }}
+                  className="overflow-hidden rounded-2xl border border-black/10 bg-zinc-50"
+                >
+                  <img src={src} alt={`Gallery image ${i + 1}`} className="h-full w-full object-cover transition-transform duration-500 hover:scale-105" />
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 
