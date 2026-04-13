@@ -329,9 +329,9 @@ export default function ValmontierSite() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 pt-2">
-                  <Stat label="Build time" value="Made to order" />
-                  <Stat label="Focus" value="Parts you pick" />
-                  <Stat label="Style" value="Dark luxury" />
+                  <Stat label="Build time" value="2-3 Weeks" />
+                  <Stat label="Focus" value="Made to order" />
+                  <Stat label="Style" value="Modern" />
                 </div>
               </motion.div>
 
@@ -673,12 +673,13 @@ export default function ValmontierSite() {
             <div className="flex flex-col gap-3 text-xs text-zinc-500 md:flex-row md:items-center md:justify-between">
               <div>© {new Date().getFullYear()} Valmontier. All rights reserved.</div>
               <div className="flex gap-4">
-                <a className="hover:text-zinc-600" href="#">
+                <Link to="/privacy" className="hover:text-zinc-600">
                   Privacy
-                </a>
-                <a className="hover:text-zinc-600" href="#">
+                </Link>
+
+                <Link to="/terms" className="hover:text-zinc-600">
                   Terms
-                </a>
+                </Link>
                 <a className="hover:text-zinc-600" href="#">
                   Support
                 </a>
