@@ -15,8 +15,40 @@ const styleCatalog = {
   Cartier: ["Tank", "Santos", "Panthére", "Ballon Bleu"],
   Patek: ["Nautilus", "Calatrava", "Aquanaut", "Cubitus"],
   Omega: ["Speedmaster", "Seamaster", "Constellation"],
+  Tissot: ["PRX", "Seastar"],
+  AP: ["Royal Oak"],
   "Grand Seiko": ["Heritage", "Sport"],
 };
+
+const caseFinishOptions = ["Silver", "Black", "Gold", "Rose Gold"];
+
+const movementOptions = ["Swiss Automatic", "Japanese Automatic", "Quartz"];
+
+const strapStyleOptions = [
+  "Jubilee",
+  "Oyster",
+  "Presidential",
+  "Leather Strap",
+  "Rubber",
+  "Flat Jubilee",
+];
+
+const handsStyleOptions = [
+  "Dauphine",
+  "Sword",
+  "Cathedral",
+  "Mercedes",
+  "Alpha",
+  "Leaf",
+  "Baton",
+  "Snowflake",
+  "Syringe",
+  "Arrow",
+  "Lance",
+  "Spade",
+  "Fleur de Lys",
+  "Skeleton",
+];
 
 export default function BespokeForm() {
   const [form, setForm] = useState({
@@ -26,10 +58,10 @@ export default function BespokeForm() {
     styleBrand: "Rolex",
     styleBuild: "Daytona",
     caseSize: "40mm",
-    caseFinish: "Brushed steel",
-    bracelet: "Tapered bracelet",
-    hands: "Slim baton",
-    movement: "Automatic",
+    caseFinish: "Silver",
+    bracelet: "Jubilee",
+    hands: "Dauphine",
+    movement: "Swiss Automatic",
     notes: "",
   });
 
@@ -47,41 +79,41 @@ export default function BespokeForm() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    const res = await fetch("/api/bespoke", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: form.name,
-        email: form.email,
-        budget: form.budget,
-        styleBrand: form.styleBrand,
-        styleBuild: form.styleBuild,
-        caseSize: form.caseSize,
-        caseFinish: form.caseFinish,
-        bracelet: form.bracelet,
-        hands: form.hands,
-        movement: form.movement,
-        notes: form.notes,
-        message: form.notes,
-      }),
-    });
+    try {
+      const res = await fetch("/api/bespoke", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          budget: form.budget,
+          styleBrand: form.styleBrand,
+          styleBuild: form.styleBuild,
+          caseSize: form.caseSize,
+          caseFinish: form.caseFinish,
+          bracelet: form.bracelet,
+          hands: form.hands,
+          movement: form.movement,
+          notes: form.notes,
+          message: form.notes,
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(data?.error || "Submission failed");
+      if (!res.ok) {
+        throw new Error(data?.error || "Submission failed");
+      }
+
+      setStatus("Request submitted. We will contact you soon.");
+    } catch (err) {
+      setStatus(err.message || "Submission failed");
     }
-
-    setStatus("Request submitted. We will contact you soon.");
-  } catch (err) {
-    setStatus(err.message || "Submission failed");
-  }
-};
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -183,42 +215,66 @@ export default function BespokeForm() {
 
         <div className="grid gap-2">
           <label className="text-sm text-zinc-700">Case finish</label>
-          <Input
-            value={form.caseFinish}
-            onChange={(e) => setField("caseFinish", e.target.value)}
-            placeholder="Brushed steel"
-            className="border-black/10 bg-white"
-          />
+          <Select value={form.caseFinish} onValueChange={(val) => setField("caseFinish", val)}>
+            <SelectTrigger className="border-black/10 bg-white">
+              <SelectValue placeholder="Select finish" />
+            </SelectTrigger>
+            <SelectContent className="border-black/10 bg-white text-zinc-900">
+              {caseFinishOptions.map((finish) => (
+                <SelectItem key={finish} value={finish}>
+                  {finish}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid gap-2">
-          <label className="text-sm text-zinc-700">Bracelet or strap</label>
-          <Input
-            value={form.bracelet}
-            onChange={(e) => setField("bracelet", e.target.value)}
-            placeholder="Tapered bracelet"
-            className="border-black/10 bg-white"
-          />
+          <label className="text-sm text-zinc-700">Strap style</label>
+          <Select value={form.bracelet} onValueChange={(val) => setField("bracelet", val)}>
+            <SelectTrigger className="border-black/10 bg-white">
+              <SelectValue placeholder="Select strap" />
+            </SelectTrigger>
+            <SelectContent className="border-black/10 bg-white text-zinc-900">
+              {strapStyleOptions.map((strap) => (
+                <SelectItem key={strap} value={strap}>
+                  {strap}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid gap-2">
           <label className="text-sm text-zinc-700">Hands style</label>
-          <Input
-            value={form.hands}
-            onChange={(e) => setField("hands", e.target.value)}
-            placeholder="Slim baton"
-            className="border-black/10 bg-white"
-          />
+          <Select value={form.hands} onValueChange={(val) => setField("hands", val)}>
+            <SelectTrigger className="border-black/10 bg-white">
+              <SelectValue placeholder="Select style" />
+            </SelectTrigger>
+            <SelectContent className="border-black/10 bg-white text-zinc-900">
+              {handsStyleOptions.map((style) => (
+                <SelectItem key={style} value={style}>
+                  {style}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid gap-2 sm:col-span-2">
           <label className="text-sm text-zinc-700">Movement</label>
-          <Input
-            value={form.movement}
-            onChange={(e) => setField("movement", e.target.value)}
-            placeholder="Automatic, quartz, or specify a movement"
-            className="border-black/10 bg-white"
-          />
+          <Select value={form.movement} onValueChange={(val) => setField("movement", val)}>
+            <SelectTrigger className="border-black/10 bg-white">
+              <SelectValue placeholder="Select movement" />
+            </SelectTrigger>
+            <SelectContent className="border-black/10 bg-white text-zinc-900">
+              {movementOptions.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {m}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
