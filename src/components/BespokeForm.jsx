@@ -22,7 +22,7 @@ const styleCatalog = {
 
 const caseFinishOptions = ["Silver", "Black", "Gold", "Rose Gold"];
 
-const movementOptions = ["Swiss Automatic", "Japanese Automatic", "Quartz"];
+const movementOptions = ["Automatic", "Quartz"];
 
 const strapStyleOptions = [
   "Jubilee",
@@ -61,7 +61,8 @@ export default function BespokeForm() {
     caseFinish: "Silver",
     bracelet: "Jubilee",
     hands: "Dauphine",
-    movement: "Swiss Automatic",
+    movement: "Automatic",
+    bezel: "Fluted",
     notes: "",
   });
 
@@ -98,6 +99,7 @@ export default function BespokeForm() {
           bracelet: form.bracelet,
           hands: form.hands,
           movement: form.movement,
+          bezel: form.styleBrand === "Rolex" ? form.bezel : undefined,
           notes: form.notes,
           message: form.notes,
         }),
@@ -166,6 +168,7 @@ export default function BespokeForm() {
                 ...prev,
                 styleBrand: val,
                 styleBuild: styleCatalog[val]?.[0] || "",
+                bezel: "Fluted",
               }))
             }
           >
@@ -276,6 +279,21 @@ export default function BespokeForm() {
             </SelectContent>
           </Select>
         </div>
+
+        {form.styleBrand === "Rolex" && (
+          <div className="grid gap-2 sm:col-span-2">
+            <label className="text-sm text-zinc-700">Bezel</label>
+            <Select value={form.bezel} onValueChange={(val) => setField("bezel", val)}>
+              <SelectTrigger className="border-black/10 bg-white">
+                <SelectValue placeholder="Select bezel" />
+              </SelectTrigger>
+              <SelectContent className="border-black/10 bg-white text-zinc-900">
+                <SelectItem value="Fluted">Fluted</SelectItem>
+                <SelectItem value="Smooth">Smooth</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-2">
