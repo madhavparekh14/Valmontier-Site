@@ -364,7 +364,7 @@ export default function ValmontierSite() {
                       className="bg-sky-600 text-white hover:bg-sky-500"
                       onClick={() => setShowMessage(true)}
                     >
-                      View Aviator details
+                      Buy Now
                     </Button>
 
                     {showMessage && (
