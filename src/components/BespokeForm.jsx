@@ -17,7 +17,6 @@ const styleCatalog = {
   Omega: ["Speedmaster", "Seamaster", "Constellation"],
   Tissot: ["PRX", "Seastar"],
   AP: ["Royal Oak"],
-  IWC: ["Portugieser", "Pilot", "Ingenieur"],
   "Grand Seiko": ["Heritage", "Sport"],
 };
 
