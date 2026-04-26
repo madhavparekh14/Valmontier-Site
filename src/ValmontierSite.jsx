@@ -432,7 +432,7 @@ export default function ValmontierSite() {
               desc="Share your vision for a custom Valmontier and we will follow up with feasibility, pricing, and next steps."
             />
 
-            <div className="mt-10">
+            <div className="mt-10 grid gap-4 md:grid-cols-2">
               <Card className="border-black/10 bg-zinc-50">
                 <CardHeader>
                   <CardTitle className="text-zinc-900">Bespoke request</CardTitle>
@@ -445,6 +445,74 @@ export default function ValmontierSite() {
                   <BespokeForm />
                 </CardContent>
               </Card>
+
+              <div className="space-y-4">
+                <Card className="border-black/10 bg-zinc-50">
+                  <CardHeader>
+                    <CardTitle className="text-zinc-900">What you can customize</CardTitle>
+                    <CardDescription className="text-zinc-500">
+                      The core components that define the build.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {[
+                      {
+                        icon: <Watch className="h-5 w-5" />,
+                        title: "Case and bracelet",
+                        desc: "Size, finish, lug shape, bracelet taper, clasp style.",
+                      },
+                      {
+                        icon: <Sparkles className="h-5 w-5" />,
+                        title: "Dial and hands",
+                        desc: "Indices, lume, textures, color tone, hand shape.",
+                      },
+                      {
+                        icon: <Compass className="h-5 w-5" />,
+                        title: "Movement",
+                        desc: "Choose supported options or request a specific movement.",
+                      },
+                      {
+                        icon: <Shield className="h-5 w-5" />,
+                        title: "Assembly and QC",
+                        desc: "Component checks, alignment review, and final inspection.",
+                      },
+                    ].map((x) => (
+                      <div key={x.title} className="flex gap-3 rounded-2xl border border-black/10 bg-white p-4">
+                        <div className="mt-0.5 rounded-xl border border-black/10 bg-black/5 p-2 text-sky-500">
+                          {x.icon}
+                        </div>
+                        <div>
+                          <div className="font-medium text-zinc-900">{x.title}</div>
+                          <div className="mt-1 text-sm text-zinc-600">{x.desc}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-black/10 bg-zinc-50">
+                  <CardHeader>
+                    <CardTitle className="text-zinc-900">Made-to-order model</CardTitle>
+                    <CardDescription className="text-zinc-500">
+                      Why we build after you order.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm text-zinc-600">
+                    <div className="flex items-start gap-3">
+                      <Check className="mt-0.5 h-4 w-4 text-sky-600" />
+                      <p>More choices, less inventory waste, and personal configurations.</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Check className="mt-0.5 h-4 w-4 text-sky-600" />
+                      <p>Better alignment between budget and parts selection.</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Check className="mt-0.5 h-4 w-4 text-sky-600" />
+                      <p>Clear expectations, with spec confirmation before assembly begins.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </section>
